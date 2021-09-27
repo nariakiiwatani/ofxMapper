@@ -2,6 +2,8 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
+	ofDisableArbTex();
+	ofLoadImage(texture_, "of.png");
 	mesh_.init();
 }
 
@@ -14,6 +16,9 @@ void ofApp::update(){
 void ofApp::draw(){
 	ofPushMatrix();
 	ofScale(ofGetWidth(), ofGetHeight());
+	texture_.bind();
+	mesh_.getMesh().drawFaces();
+	texture_.unbind();
 	mesh_.getMesh().drawWireframe();
 	ofPopMatrix();
 }

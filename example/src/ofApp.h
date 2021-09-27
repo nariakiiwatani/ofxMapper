@@ -22,5 +22,6 @@ public:
 	void dragEvent(ofDragInfo dragInfo);
 	void gotMessage(ofMessage msg);
 private:
+	ofTexture texture_;
 	ofx::mapper::Mesh mesh_;
 };
