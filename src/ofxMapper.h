@@ -14,6 +14,9 @@ public:
 	void divideRow(int index, float offset);
 	void divideCol(int index, float offset);
 	
+	void deleteRow(int index);
+	void deleteCol(int index);
+	
 	struct PointRef {
 		glm::vec3 *v=nullptr;
 		glm::vec3 *n=nullptr;

@@ -143,6 +143,48 @@ void Mesh::divideCol(int index, float offset)
 	resetIndices();
 }
 
+void Mesh::deleteRow(int index)
+{
+	assert(index <= num_cells_.y);
+	if(num_cells_.y == 1) {
+		ofLogWarning(LOG_TITLE) << "cannot delete a row any more";
+		return;
+	}
+	auto &vertices = mesh_.getVertices();
+	auto &colors = mesh_.getColors();
+	auto &texcoords = mesh_.getTexCoords();
+	auto &normals = mesh_.getNormals();
+	for(int i = mesh_.getNumVertices()-(num_cells_.y+1)+index; i >= 0; i -= (num_cells_.y+1)) {
+		vertices.erase(std::begin(vertices)+i);
+		colors.erase(std::begin(colors)+i);
+		texcoords.erase(std::begin(texcoords)+i);
+		normals.erase(std::begin(normals)+i);
+	}
+	--num_cells_.y;
+	resetIndices();
+}
+
+void Mesh::deleteCol(int index)
+{
+	assert(index <= num_cells_.x);
+	if(num_cells_.x == 1) {
+		ofLogWarning(LOG_TITLE) << "cannot delete a column any more";
+		return;
+	}
+	auto &vertices = mesh_.getVertices();
+	auto &colors = mesh_.getColors();
+	auto &texcoords = mesh_.getTexCoords();
+	auto &normals = mesh_.getNormals();
+	for(int i = (index+1)*(num_cells_.y+1); i --> index*(num_cells_.y+1);) {
+		vertices.erase(std::begin(vertices)+i);
+		colors.erase(std::begin(colors)+i);
+		texcoords.erase(std::begin(texcoords)+i);
+		normals.erase(std::begin(normals)+i);
+	}
+	--num_cells_.x;
+	resetIndices();
+}
+
 Mesh::PointRef Mesh::getPoint(int col, int row)
 {
 	if(col > num_cells_.x || row > num_cells_.y) return {};

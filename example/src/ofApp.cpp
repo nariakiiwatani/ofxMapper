@@ -24,6 +24,12 @@ void ofApp::keyPressed(int key){
 	if(num >= 0 && num <= 9) {
 		mesh_.init({num+1, num+1});
 	}
+	else {
+		switch(key) {
+			case OF_KEY_LEFT: mesh_.deleteCol(1); break;
+			case OF_KEY_UP: mesh_.deleteRow(1); break;
+		}
+	}
 }
 
 //--------------------------------------------------------------
