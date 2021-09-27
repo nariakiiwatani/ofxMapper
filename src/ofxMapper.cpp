@@ -142,3 +142,15 @@ void Mesh::divideCol(int index, float offset)
 	}
 	resetIndices();
 }
+
+Mesh::PointRef Mesh::getPoint(int col, int row)
+{
+	if(col > num_cells_.x || row > num_cells_.y) return {};
+	int index = col*(num_cells_.y+1) + row;
+	PointRef ret;
+	ret.v = mesh_.getVerticesPointer() + index;
+	ret.c = mesh_.getColorsPointer() + index;
+	ret.t = mesh_.getTexCoordsPointer() + index;
+	ret.n = mesh_.getNormalsPointer() + index;
+	return ret;
+}

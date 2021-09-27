@@ -13,7 +13,7 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
 	ofPushMatrix();
-	ofScale(1000,1000);
+	ofScale(ofGetWidth(), ofGetHeight());
 	mesh_.getMesh().drawWireframe();
 	ofPopMatrix();
 }
@@ -33,7 +33,7 @@ void ofApp::keyReleased(int key){
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
-
+	*mesh_.getPoint(0, 0).v = {x/(float)ofGetWidth(), y/(float)ofGetHeight(), 0};
 }
 
 //--------------------------------------------------------------

@@ -13,6 +13,14 @@ public:
 
 	void divideRow(int index, float offset);
 	void divideCol(int index, float offset);
+	
+	struct PointRef {
+		glm::vec3 *v=nullptr;
+		glm::vec3 *n=nullptr;
+		glm::vec2 *t=nullptr;
+		ofFloatColor *c=nullptr;
+	};
+	PointRef getPoint(int col, int row);
 private:
 	ofMesh mesh_;
 	glm::ivec2 num_cells_;
