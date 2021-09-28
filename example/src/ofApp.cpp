@@ -4,7 +4,9 @@
 void ofApp::setup(){
 	ofDisableArbTex();
 	ofLoadImage(texture_, "of.png");
-	mesh_.init();
+	mesh_ = std::make_shared<ofx::mapper::Mesh>();
+	mesh_->init({4,4});
+	selector_.setMesh(mesh_);
 }
 
 //--------------------------------------------------------------
@@ -17,23 +19,33 @@ void ofApp::draw(){
 	ofPushMatrix();
 	ofScale(ofGetWidth(), ofGetHeight());
 	texture_.bind();
-	mesh_.getMesh().drawFaces();
+	mesh_->getMesh().drawFaces();
 	texture_.unbind();
-	mesh_.getMesh().drawWireframe();
+	mesh_->getMesh().drawWireframe();
 	ofPopMatrix();
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-	int num = key-'0';
-	if(num >= 0 && num <= 9) {
-		mesh_.init({num+1, num+1});
-	}
-	else {
-		switch(key) {
-			case OF_KEY_LEFT: mesh_.deleteCol(1); break;
-			case OF_KEY_UP: mesh_.deleteRow(1); break;
-		}
+	switch(key) {
+		case '0':
+			selector_.clearAll();
+			break;
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9': {
+			int mod = key-'0';
+			selector_.toggleRow(mod);
+			selector_.toggleCol(mod);
+		}	break;
+		case OF_KEY_LEFT: mesh_->deleteCol(1); break;
+		case OF_KEY_UP: mesh_->deleteRow(1); break;
 	}
 }
 
@@ -44,12 +56,19 @@ void ofApp::keyReleased(int key){
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
-	*mesh_.getPoint(0, 0).v = {x/(float)ofGetWidth(), y/(float)ofGetHeight(), 0};
+
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button){
-
+	float dx = (x - ofGetPreviousMouseX())/(float)ofGetWidth();
+	float dy = (y - ofGetPreviousMouseY())/(float)ofGetHeight();
+	for(auto &&p : selector_.getSelected()) {
+		if(p.v) {
+			p.v->x += dx;
+			p.v->y += dy;
+		}
+	}
 }
 
 //--------------------------------------------------------------

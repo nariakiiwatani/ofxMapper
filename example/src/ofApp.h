@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 #include "ofxMapper.h"
+#include "ofxMapperSelector.h"
 
 class ofApp : public ofBaseApp{
 	
@@ -23,5 +24,6 @@ public:
 	void gotMessage(ofMessage msg);
 private:
 	ofTexture texture_;
-	ofx::mapper::Mesh mesh_;
+	std::shared_ptr<ofx::mapper::Mesh> mesh_;
+	ofx::mapper::Selector selector_;
 };

@@ -37,24 +37,22 @@ void Mesh::resetMesh(const glm::ivec2 &num_cells)
 void Mesh::resetIndices()
 {
 	mesh_.clearIndices();
-	mesh_.setMode(OF_PRIMITIVE_TRIANGLE_STRIP);
+	mesh_.setMode(OF_PRIMITIVE_TRIANGLES);
 	int rows = num_cells_.y+1;
 	int cols = num_cells_.x+1;
 	for(int y = 0; y < rows-1; y++) {
-		if((y&1)==0) {
-			for(int x = 0; x < cols; x++) {
-				mesh_.addIndex(x*rows + y);
-				mesh_.addIndex(x*rows + y+1);
-			}
-		} else {
-			for(int x = cols-1; x >0; x--) {
-				mesh_.addIndex(x*rows + y+1);
-				mesh_.addIndex((x-1)*rows + y);
-			}
+		for(int x = 0; x < cols-1; x++) {
+			// first triangle //
+			mesh_.addIndex((x)*rows + y);
+			mesh_.addIndex((x)*rows + y+1);
+			mesh_.addIndex((x+1)*rows + y);
+
+			// second triangle //
+			mesh_.addIndex((x)*rows + y+1);
+			mesh_.addIndex((x+1)*rows + y+1);
+			mesh_.addIndex((x+1)*rows + y);
 		}
 	}
-
-	if((rows&1)!=0) mesh_.addIndex(num_cells_.y);
 }
 
 void Mesh::divideRow(int index, float offset)
@@ -96,6 +94,8 @@ void Mesh::divideRow(int index, float offset)
 		}
 	}
 	resetIndices();
+	
+	ofNotifyEvent(onDivideRow, index, this);
 }
 
 void Mesh::divideCol(int index, float offset)
@@ -141,6 +141,8 @@ void Mesh::divideCol(int index, float offset)
 		}
 	}
 	resetIndices();
+	
+	ofNotifyEvent(onDivideCol, index, this);
 }
 
 void Mesh::deleteRow(int index)
@@ -162,6 +164,7 @@ void Mesh::deleteRow(int index)
 	}
 	--num_cells_.y;
 	resetIndices();
+	ofNotifyEvent(onDeleteRow, index, this);
 }
 
 void Mesh::deleteCol(int index)
@@ -183,6 +186,7 @@ void Mesh::deleteCol(int index)
 	}
 	--num_cells_.x;
 	resetIndices();
+	ofNotifyEvent(onDeleteCol, index, this);
 }
 
 Mesh::PointRef Mesh::getPoint(int col, int row)
@@ -190,6 +194,8 @@ Mesh::PointRef Mesh::getPoint(int col, int row)
 	if(col > num_cells_.x || row > num_cells_.y) return {};
 	int index = col*(num_cells_.y+1) + row;
 	PointRef ret;
+	ret.col = col;
+	ret.row = row;
 	ret.v = mesh_.getVerticesPointer() + index;
 	ret.c = mesh_.getColorsPointer() + index;
 	ret.t = mesh_.getTexCoordsPointer() + index;
