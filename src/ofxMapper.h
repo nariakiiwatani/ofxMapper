@@ -17,7 +17,6 @@ public:
 
 	void divideRow(int index, float offset);
 	void divideCol(int index, float offset);
-	
 	void deleteRow(int index);
 	void deleteCol(int index);
 	ofEvent<int> onDivideRow, onDivideCol, onDeleteRow, onDeleteCol;
@@ -30,6 +29,9 @@ public:
 		ofFloatColor *c=nullptr;
 	};
 	PointRef getPoint(int col, int row);
+	
+	bool getDividePoint(const glm::vec2 &pos, glm::vec2 &dst) const;
+	
 private:
 	ofMesh mesh_;
 	glm::ivec2 num_cells_;

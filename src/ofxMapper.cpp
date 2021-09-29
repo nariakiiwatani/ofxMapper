@@ -1,5 +1,6 @@
 #include "ofxMapper.h"
 #include "ofLog.h"
+#include "ofPolyline.h"
 
 namespace {
 static const std::string LOG_TITLE;
@@ -201,4 +202,62 @@ Mesh::PointRef Mesh::getPoint(int col, int row)
 	ret.t = mesh_.getTexCoordsPointer() + index;
 	ret.n = mesh_.getNormalsPointer() + index;
 	return ret;
+}
+
+bool Mesh::getDividePoint(const glm::vec2 &pos, glm::vec2 &dst) const
+{
+	for(int row = 0; row < num_cells_.y; ++row) {
+		for(int col = 0; col < num_cells_.x; ++col) {
+			auto getIndex = [this](int c, int r) { return c*(num_cells_.y+1)+r; };
+			ofPolyline quad;
+			quad.addVertex(mesh_.getVertex(getIndex(col, row)));
+			quad.addVertex(mesh_.getVertex(getIndex(col+1, row)));
+			quad.addVertex(mesh_.getVertex(getIndex(col+1, row+1)));
+			quad.addVertex(mesh_.getVertex(getIndex(col, row+1)));
+			quad.close();
+			if(!quad.inside(pos.x, pos.y)) {
+				continue;
+			}
+			glm::vec2 AB = quad[1]-quad[0];
+			glm::vec2 AC = quad[2]-quad[0];
+			glm::vec2 AD = quad[3]-quad[0];
+			glm::vec2 AP = pos-quad[0];
+			glm::vec2 CDB = AC-AD-AB;
+			auto calc_t = [=](float s) {
+				float div = AD.y+s*CDB.y;
+				return div == 0 ? 0 : (AP.y-s*AB.y)/div;
+			};
+			float a = AB.y*CDB.x - AB.x*CDB.y;
+			float b = (AB.y*AD.x - AP.y*CDB.x) - (AB.x*AD.y - AP.x*CDB.y);
+			float c = AP.x*AD.y - AP.y*AD.x;
+			float D = b*b - 4*a*c;
+			if(D < 0) {
+				ofLogWarning(LOG_TITLE) << "not found";
+				return false;
+			}
+			if(a == 0) {
+				float s = b == 0 ? 0 : -c/b;
+				float t = calc_t(s);
+				dst = {s+col, t+row};
+				return ofInRange(s,0,1) && ofInRange(t,0,1);
+			}
+			float sqrtD = sqrt(D);
+			float s = (-b+sqrtD)/(2*a);
+			float t = calc_t(s);
+			if(ofInRange(s,0,1) && ofInRange(t,0,1)) {
+				dst = {s+col, t+row};
+				return true;
+			}
+			s = (-b-sqrtD)/(2*a);
+			t = calc_t(s);
+			if(ofInRange(s,0,1) && ofInRange(t,0,1)) {
+				dst = {s+col, t+row};
+				return true;
+			}
+			ofLogWarning(LOG_TITLE) << "not found";
+			return false;
+		}
+	}
+	ofLogWarning(LOG_TITLE) << "not found";
+	return false;
 }

@@ -75,7 +75,16 @@ void ofApp::mouseDragged(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
-
+	if(button == OF_MOUSE_BUTTON_RIGHT) {
+		glm::vec2 pos(x/(float)ofGetWidth(), y/(float)ofGetHeight());
+		glm::vec2 div_pos;
+		if(mesh_->getDividePoint(pos, div_pos)) {
+			int col = div_pos.x;
+			int row = div_pos.y;
+			mesh_->divideCol(col, div_pos.x-col);
+			mesh_->divideRow(row, div_pos.y-row);
+		}
+	}
 }
 
 //--------------------------------------------------------------
