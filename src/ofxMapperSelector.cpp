@@ -10,11 +10,13 @@ void Selector::setMesh(std::shared_ptr<Mesh> mesh)
 		ofRemoveListener(m->onDivideCol, this, &Selector::onDivideCol);
 		ofRemoveListener(m->onDeleteRow, this, &Selector::onDeleteRow);
 		ofRemoveListener(m->onDeleteCol, this, &Selector::onDeleteCol);
+		ofRemoveListener(m->onReset, this, &Selector::onResetMesh);
 	}
 	ofAddListener(mesh->onDivideRow, this, &Selector::onDivideRow);
 	ofAddListener(mesh->onDivideCol, this, &Selector::onDivideCol);
 	ofAddListener(mesh->onDeleteRow, this, &Selector::onDeleteRow);
 	ofAddListener(mesh->onDeleteCol, this, &Selector::onDeleteCol);
+	ofAddListener(mesh->onReset, this, &Selector::onResetMesh);
 	mesh_ = mesh;
 	selected_.resize(mesh->getNumRows()+1);
 	for(auto &row : selected_) {
@@ -179,4 +181,9 @@ void Selector::onDeleteCol(int &index)
 		}
 		r.erase(std::begin(r)+index);
 	}
+}
+
+void Selector::onResetMesh(const glm::ivec2 &num_cells)
+{
+	clearAll();
 }

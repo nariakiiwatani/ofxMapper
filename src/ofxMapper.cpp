@@ -8,6 +8,121 @@ static const std::string LOG_TITLE;
 
 using namespace ofx::mapper;
 
+namespace io {
+#pragma pack(push, 4)
+struct Header {
+	char ext[4] = {'m','a','p','m'};
+	char version[4] = {'0','0','1','0'};
+	int col, row, num;
+	Header() {
+	}
+	Header(int col, int row, int num)
+	:col(col),row(row),num(num)
+	{}
+};
+struct Point {
+	int col, row;
+	glm::vec3 v;
+	glm::vec3 n;
+	glm::vec2 t;
+	ofFloatColor c;
+	Point(){}
+	Point(const Mesh::PointRef &src)
+	:col(src.col),row(src.row)
+	,v(*src.v),n(*src.n),t(*src.t),c(*src.c)
+	{}
+};
+#pragma pack(pop)
+}
+namespace {
+template<typename T>
+void writeTo(std::ostream& os, const T& t) {
+	os.write(reinterpret_cast<const char*>(&t), sizeof(T));
+}
+template<typename T>
+void readFrom(std::istream& is, T& t) {
+	is.read(reinterpret_cast<char*>(&t), sizeof(T));
+}
+std::ostream& operator<<(std::ostream& stream, const io::Header &header) {
+	writeTo(stream, header.ext);
+	writeTo(stream, header.version);
+	writeTo(stream, header.col);
+	writeTo(stream, header.row);
+	writeTo(stream, header.num);
+	return stream;
+}
+std::istream& operator>>(std::istream& stream, io::Header &header) {
+	readFrom(stream, header.ext);
+	readFrom(stream, header.version);
+	readFrom(stream, header.col);
+	readFrom(stream, header.row);
+	readFrom(stream, header.num);
+	return stream;
+}
+std::ostream& operator<<(std::ostream& stream, const io::Point &point) {
+	writeTo(stream, point.col);
+	writeTo(stream, point.row);
+	writeTo(stream, point.v.x);
+	writeTo(stream, point.v.y);
+	writeTo(stream, point.v.z);
+	writeTo(stream, point.n.x);
+	writeTo(stream, point.n.y);
+	writeTo(stream, point.n.z);
+	writeTo(stream, point.t.x);
+	writeTo(stream, point.t.y);
+	writeTo(stream, point.c.r);
+	writeTo(stream, point.c.g);
+	writeTo(stream, point.c.b);
+	writeTo(stream, point.c.a);
+	return stream;
+}
+std::istream& operator>>(std::istream& stream, io::Point &point) {
+	readFrom(stream, point.col);
+	readFrom(stream, point.row);
+	readFrom(stream, point.v.x);
+	readFrom(stream, point.v.y);
+	readFrom(stream, point.v.z);
+	readFrom(stream, point.n.x);
+	readFrom(stream, point.n.y);
+	readFrom(stream, point.n.z);
+	readFrom(stream, point.t.x);
+	readFrom(stream, point.t.y);
+	readFrom(stream, point.c.r);
+	readFrom(stream, point.c.g);
+	readFrom(stream, point.c.b);
+	readFrom(stream, point.c.a);
+	return stream;
+}
+}
+void Mesh::save(const std::string &filepath) const
+{
+	ofFile file(filepath, ofFile::WriteOnly);
+	file << io::Header(num_cells_.x, num_cells_.y, (num_cells_.x+1)*(num_cells_.y+1));
+	for(int r = 0; r <= num_cells_.y; ++r) {
+		for(int c = 0; c <= num_cells_.x; ++c) {
+			file << io::Point(const_cast<Mesh*>(this)->getPoint(c, r));
+		}
+	}
+	file.close();
+}
+void Mesh::load(const std::string &filepath)
+{
+	ofFile file(filepath);
+	io::Header header;
+	file >> header;
+	resetMesh({header.col, header.row});
+	for(int i = 0; i < header.num; ++i) {
+		io::Point point;
+		file >> point;
+		auto ref = getPoint(point.col, point.row);
+		*ref.v = point.v;
+		*ref.n = point.n;
+		*ref.t = point.t;
+		*ref.c = point.c;
+	}
+	file.close();
+}
+
 void Mesh::resetMesh(const glm::ivec2 &num_cells)
 {
 	num_cells_ = glm::ivec2(1,1);
@@ -26,13 +141,14 @@ void Mesh::resetMesh(const glm::ivec2 &num_cells)
 	});
 	
 	for(int i = 0; i < num_cells.x-1; ++i) {
-		divideCol(i, 1/(float)(num_cells.x-i));
+		divideColImpl(i, 1/(float)(num_cells.x-i));
 	}
 	for(int i = 0; i < num_cells.y-1; ++i) {
-		divideRow(i, 1/(float)(num_cells.y-i));
+		divideRowImpl(i, 1/(float)(num_cells.y-i));
 	}
 
 	resetIndices();
+	ofNotifyEvent(onReset, num_cells, this);
 }
 
 void Mesh::resetIndices()
@@ -43,12 +159,10 @@ void Mesh::resetIndices()
 	int cols = num_cells_.x+1;
 	for(int y = 0; y < rows-1; y++) {
 		for(int x = 0; x < cols-1; x++) {
-			// first triangle //
 			mesh_.addIndex((x)*rows + y);
 			mesh_.addIndex((x)*rows + y+1);
 			mesh_.addIndex((x+1)*rows + y);
 
-			// second triangle //
 			mesh_.addIndex((x)*rows + y+1);
 			mesh_.addIndex((x+1)*rows + y+1);
 			mesh_.addIndex((x+1)*rows + y);
@@ -63,7 +177,49 @@ void Mesh::divideRow(int index, float offset)
 		ofLogWarning(LOG_TITLE) << "cannot divide by offset outside 0 and 1";
 		return;
 	}
-	
+	divideRowImpl(index, offset);
+	resetIndices();
+	ofNotifyEvent(onDivideRow, index, this);
+}
+
+void Mesh::divideCol(int index, float offset)
+{
+	assert(index < num_cells_.x);
+	if(offset <= 0 || offset >= 1) {
+		ofLogWarning(LOG_TITLE) << "cannot divide by offset outside 0 and 1";
+		return;
+	}
+	divideColImpl(index, offset);
+	resetIndices();
+	ofNotifyEvent(onDivideCol, index, this);
+}
+
+void Mesh::deleteRow(int index)
+{
+	assert(index <= num_cells_.y);
+	if(num_cells_.y == 1) {
+		ofLogWarning(LOG_TITLE) << "cannot delete a row any more";
+		return;
+	}
+	deleteRowImpl(index);
+	resetIndices();
+	ofNotifyEvent(onDeleteRow, index, this);
+}
+
+void Mesh::deleteCol(int index)
+{
+	assert(index <= num_cells_.x);
+	if(num_cells_.x == 1) {
+		ofLogWarning(LOG_TITLE) << "cannot delete a column any more";
+		return;
+	}
+	deleteColImpl(index);
+	resetIndices();
+	ofNotifyEvent(onDeleteCol, index, this);
+}
+
+void Mesh::divideRowImpl(int index, float offset)
+{
 	++num_cells_.y;
 	int cols = num_cells_.x+1;
 	int rows = num_cells_.y+1;
@@ -94,19 +250,9 @@ void Mesh::divideRow(int index, float offset)
 			}
 		}
 	}
-	resetIndices();
-	
-	ofNotifyEvent(onDivideRow, index, this);
 }
-
-void Mesh::divideCol(int index, float offset)
+void Mesh::divideColImpl(int index, float offset)
 {
-	assert(index < num_cells_.x);
-	if(offset <= 0 || offset >= 1) {
-		ofLogWarning(LOG_TITLE) << "cannot divide by offset outside 0 and 1";
-		return;
-	}
-
 	++num_cells_.x;
 	int cols = num_cells_.x+1;
 	int rows = num_cells_.y+1;
@@ -140,19 +286,9 @@ void Mesh::divideCol(int index, float offset)
 				normals[dst] = normals[src];
 			}
 		}
-	}
-	resetIndices();
-	
-	ofNotifyEvent(onDivideCol, index, this);
-}
-
-void Mesh::deleteRow(int index)
+	}}
+void Mesh::deleteRowImpl(int index)
 {
-	assert(index <= num_cells_.y);
-	if(num_cells_.y == 1) {
-		ofLogWarning(LOG_TITLE) << "cannot delete a row any more";
-		return;
-	}
 	auto &vertices = mesh_.getVertices();
 	auto &colors = mesh_.getColors();
 	auto &texcoords = mesh_.getTexCoords();
@@ -164,17 +300,9 @@ void Mesh::deleteRow(int index)
 		normals.erase(std::begin(normals)+i);
 	}
 	--num_cells_.y;
-	resetIndices();
-	ofNotifyEvent(onDeleteRow, index, this);
 }
-
-void Mesh::deleteCol(int index)
+void Mesh::deleteColImpl(int index)
 {
-	assert(index <= num_cells_.x);
-	if(num_cells_.x == 1) {
-		ofLogWarning(LOG_TITLE) << "cannot delete a column any more";
-		return;
-	}
 	auto &vertices = mesh_.getVertices();
 	auto &colors = mesh_.getColors();
 	auto &texcoords = mesh_.getTexCoords();
@@ -186,8 +314,6 @@ void Mesh::deleteCol(int index)
 		normals.erase(std::begin(normals)+i);
 	}
 	--num_cells_.x;
-	resetIndices();
-	ofNotifyEvent(onDeleteCol, index, this);
 }
 
 Mesh::PointRef Mesh::getPoint(int col, int row)

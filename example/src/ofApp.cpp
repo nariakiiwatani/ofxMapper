@@ -48,6 +48,8 @@ void ofApp::keyPressed(int key){
 		case OF_KEY_RIGHT: mesh_->divideCol(0, 0.5f); break;
 		case OF_KEY_UP: mesh_->deleteRow(1); break;
 		case OF_KEY_DOWN: mesh_->divideRow(0, 0.5f); break;
+		case 's': mesh_->save("mesh.mapm"); break;
+		case 'l': mesh_->load("mesh.mapm"); break;
 	}
 }
 

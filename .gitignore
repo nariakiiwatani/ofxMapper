@@ -1,6 +1,7 @@
 *.app
 *.xcodeproj
 example*/*
+!example*/.gitignore
 !example*/src
 !example*/bin
 !example*/addons.make

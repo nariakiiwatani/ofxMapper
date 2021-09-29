@@ -12,6 +12,9 @@ public:
 	void init(const glm::ivec2 &num_cells = glm::ivec2(1,1)) { resetMesh(num_cells); }
 	const ofMesh& getMesh() const { return mesh_; }
 	
+	void save(const std::string &filepath) const;
+	void load(const std::string &filepath);
+	
 	int getNumRows() const { return num_cells_.y; }
 	int getNumCols() const { return num_cells_.x; }
 
@@ -20,6 +23,7 @@ public:
 	void deleteRow(int index);
 	void deleteCol(int index);
 	ofEvent<int> onDivideRow, onDivideCol, onDeleteRow, onDeleteCol;
+	ofEvent<const glm::ivec2> onReset;
 	
 	struct PointRef {
 		int col, row;
@@ -37,5 +41,10 @@ private:
 	glm::ivec2 num_cells_;
 	void resetMesh(const glm::ivec2 &num_cells);
 	void resetIndices();
+	
+	void divideRowImpl(int index, float offset);
+	void divideColImpl(int index, float offset);
+	void deleteRowImpl(int index);
+	void deleteColImpl(int index);
 };
 }}
