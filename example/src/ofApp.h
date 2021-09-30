@@ -3,6 +3,7 @@
 #include "ofMain.h"
 #include "ofxMapper.h"
 #include "ofxMapperSelector.h"
+#include "ofxMapperInterpolator.h"
 
 class ofApp : public ofBaseApp{
 	
@@ -26,4 +27,5 @@ private:
 	ofTexture texture_;
 	std::shared_ptr<ofx::mapper::Mesh> mesh_;
 	ofx::mapper::Selector selector_;
+	ofx::mapper::Interpolator interpolator_;
 };

@@ -18,10 +18,7 @@ void Selector::setMesh(std::shared_ptr<Mesh> mesh)
 	ofAddListener(mesh->onDeleteCol, this, &Selector::onDeleteCol);
 	ofAddListener(mesh->onReset, this, &Selector::onResetMesh);
 	mesh_ = mesh;
-	selected_.resize(mesh->getNumRows()+1);
-	for(auto &row : selected_) {
-		row.assign(mesh->getNumCols()+1, false);
-	}
+	onResetMesh({mesh->getNumCols(), mesh->getNumRows()});
 }
 
 std::vector<Mesh::PointRef> Selector::getSelected()
@@ -185,5 +182,9 @@ void Selector::onDeleteCol(int &index)
 
 void Selector::onResetMesh(const glm::ivec2 &num_cells)
 {
+	selected_.resize(num_cells.x+1);
+	for(auto &row : selected_) {
+		row.assign(num_cells.y+1, false);
+	}
 	clearAll();
 }

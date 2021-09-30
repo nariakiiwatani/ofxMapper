@@ -32,10 +32,10 @@ protected:
 	std::weak_ptr<Mesh> mesh_;
 	std::vector<std::vector<bool>> selected_;
 	
-	void onResetMesh(const glm::ivec2 &num_cells);
-	void onDivideRow(int &index);
-	void onDivideCol(int &index);
-	void onDeleteRow(int &index);
-	void onDeleteCol(int &index);
+	virtual void onResetMesh(const glm::ivec2 &num_cells);
+	virtual void onDivideRow(int &index);
+	virtual void onDivideCol(int &index);
+	virtual void onDeleteRow(int &index);
+	virtual void onDeleteCol(int &index);
 };
 }}

@@ -5,13 +5,14 @@ void ofApp::setup(){
 	ofDisableArbTex();
 	ofLoadImage(texture_, "of.png");
 	mesh_ = std::make_shared<ofx::mapper::Mesh>();
-	mesh_->init({4,4});
 	selector_.setMesh(mesh_);
+	interpolator_.setMesh(mesh_);
+	mesh_->init({4,4});
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
-
+	interpolator_.update();
 }
 
 //--------------------------------------------------------------
@@ -85,6 +86,8 @@ void ofApp::mousePressed(int x, int y, int button){
 			int row = div_pos.y;
 			mesh_->divideCol(col, div_pos.x-col);
 			mesh_->divideRow(row, div_pos.y-row);
+			interpolator_.selectPoint(col+1, row+1);
+			selector_.selectPoint(col+1, row+1);
 		}
 	}
 }
