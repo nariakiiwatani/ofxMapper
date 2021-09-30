@@ -1,4 +1,5 @@
 #include "ofxMapperSelector.h"
+#include "ofxMapperMesh.h"
 #include <numeric>
 
 using namespace ofx::mapper;

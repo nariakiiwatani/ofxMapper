@@ -1,4 +1,4 @@
-#include "ofxMapper.h"
+#include "ofxMapperMesh.h"
 #include "ofLog.h"
 #include "ofPolyline.h"
 

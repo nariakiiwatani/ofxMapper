@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 #include <glm/vec2.hpp>
-#include "ofxMapper.h"
+#include "ofxMapperMesh.h"
 
 namespace ofx {
 namespace mapper {

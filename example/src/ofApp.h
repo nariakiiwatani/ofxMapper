@@ -2,9 +2,6 @@
 
 #include "ofMain.h"
 #include "ofxMapper.h"
-#include "ofxMapperSelector.h"
-#include "ofxMapperInterpolator.h"
-#include "ofxMapperUpSampler.h"
 
 class ofApp : public ofBaseApp{
 	
