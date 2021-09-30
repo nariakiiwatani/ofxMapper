@@ -330,6 +330,20 @@ Mesh::PointRef Mesh::getPoint(int col, int row)
 	return ret;
 }
 
+Mesh::ConstPointRef Mesh::getPoint(int col, int row) const
+{
+	if(col > num_cells_.x || row > num_cells_.y) return {};
+	int index = col*(num_cells_.y+1) + row;
+	ConstPointRef ret;
+	ret.col = col;
+	ret.row = row;
+	ret.v = mesh_.getVerticesPointer() + index;
+	ret.c = mesh_.getColorsPointer() + index;
+	ret.t = mesh_.getTexCoordsPointer() + index;
+	ret.n = mesh_.getNormalsPointer() + index;
+	return ret;
+}
+
 bool Mesh::getDividePoint(const glm::vec2 &pos, glm::vec2 &dst) const
 {
 	for(int row = 0; row < num_cells_.y; ++row) {

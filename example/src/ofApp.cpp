@@ -17,12 +17,13 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+	ofMesh mesh = up_sampler_.proc(*mesh_, 0.01f);
 	ofPushMatrix();
 	ofScale(ofGetWidth(), ofGetHeight());
 	texture_.bind();
-	mesh_->getMesh().drawFaces();
+	mesh.drawFaces();
 	texture_.unbind();
-	mesh_->getMesh().drawWireframe();
+	mesh.drawWireframe();
 	ofPopMatrix();
 }
 

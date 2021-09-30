@@ -4,6 +4,7 @@
 #include "ofxMapper.h"
 #include "ofxMapperSelector.h"
 #include "ofxMapperInterpolator.h"
+#include "ofxMapperUpSampler.h"
 
 class ofApp : public ofBaseApp{
 	
@@ -28,4 +29,5 @@ private:
 	std::shared_ptr<ofx::mapper::Mesh> mesh_;
 	ofx::mapper::Selector selector_;
 	ofx::mapper::Interpolator interpolator_;
+	ofx::mapper::UpSampler up_sampler_;
 };

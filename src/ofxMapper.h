@@ -32,7 +32,15 @@ public:
 		glm::vec2 *t=nullptr;
 		ofFloatColor *c=nullptr;
 	};
+	struct ConstPointRef {
+		int col, row;
+		const glm::vec3 *v=nullptr;
+		const glm::vec3 *n=nullptr;
+		const glm::vec2 *t=nullptr;
+		const ofFloatColor *c=nullptr;
+	};
 	PointRef getPoint(int col, int row);
+	ConstPointRef getPoint(int col, int row) const;
 	
 	bool getDividePoint(const glm::vec2 &pos, glm::vec2 &dst) const;
 	
