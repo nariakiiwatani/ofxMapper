@@ -344,11 +344,10 @@ Mesh::ConstPointRef Mesh::getPoint(int col, int row) const
 	return ret;
 }
 
-bool Mesh::getDividePoint(const glm::vec2 &pos, glm::vec2 &dst) const
+bool Mesh::getIndexOfPoint(const glm::vec2 &pos, glm::vec2 &dst_findex) const
 {
 	for(int row = 0; row < num_cells_.y; ++row) {
 		for(int col = 0; col < num_cells_.x; ++col) {
-			auto getIndex = [this](int c, int r) { return c*(num_cells_.y+1)+r; };
 			ofPolyline quad;
 			quad.addVertex(mesh_.getVertex(getIndex(col, row)));
 			quad.addVertex(mesh_.getVertex(getIndex(col+1, row)));
@@ -378,20 +377,20 @@ bool Mesh::getDividePoint(const glm::vec2 &pos, glm::vec2 &dst) const
 			if(a == 0) {
 				float s = b == 0 ? 0 : -c/b;
 				float t = calc_t(s);
-				dst = {s+col, t+row};
+				dst_findex = {s+col, t+row};
 				return ofInRange(s,0,1) && ofInRange(t,0,1);
 			}
 			float sqrtD = sqrt(D);
 			float s = (-b+sqrtD)/(2*a);
 			float t = calc_t(s);
 			if(ofInRange(s,0,1) && ofInRange(t,0,1)) {
-				dst = {s+col, t+row};
+				dst_findex = {s+col, t+row};
 				return true;
 			}
 			s = (-b-sqrtD)/(2*a);
 			t = calc_t(s);
 			if(ofInRange(s,0,1) && ofInRange(t,0,1)) {
-				dst = {s+col, t+row};
+				dst_findex = {s+col, t+row};
 				return true;
 			}
 			ofLogWarning(LOG_TITLE) << "not found";
@@ -400,4 +399,82 @@ bool Mesh::getDividePoint(const glm::vec2 &pos, glm::vec2 &dst) const
 	}
 	ofLogWarning(LOG_TITLE) << "not found";
 	return false;
+}
+
+bool Mesh::getNearestPoint(const glm::vec2 &pos, glm::ivec2 &dst_index, glm::vec2 &result) const
+{
+	float distance2 = std::numeric_limits<float>::max();
+	for(int row = 0; row <= num_cells_.y; ++row) {
+		for(int col = 0; col <= num_cells_.x; ++col) {
+			auto &&point = mesh_.getVertex(getIndex(col, row));
+			float dist2 = glm::distance2(glm::vec3(pos,0), point);
+			if(dist2 < distance2) {
+				dst_index = {col, row};
+				result = point;
+				distance2 = dist2;
+			}
+		}
+	}
+	return true;
+}
+bool Mesh::getNearestPointOnLine(const glm::vec2 &pos, glm::vec2 &dst_findex, glm::vec2 &result, bool &is_row) const
+{
+	bool found = false;
+	float distance = std::numeric_limits<float>::max();
+	for(int row = 0; row < num_cells_.y; ++row) {
+		for(int col = 0; col < num_cells_.x; ++col) {
+			ofPolyline quad;
+			quad.addVertex(mesh_.getVertex(getIndex(col, row)));
+			quad.addVertex(mesh_.getVertex(getIndex(col+1, row)));
+			quad.addVertex(mesh_.getVertex(getIndex(col+1, row+1)));
+			quad.addVertex(mesh_.getVertex(getIndex(col, row+1)));
+			quad.close();
+			if(!quad.inside(pos.x, pos.y)) {
+				continue;
+			}
+			auto calcDistance2ToLine = [](const glm::vec2 &pos, const glm::vec2 &p0, const glm::vec2 &p1, glm::vec2 &intersection) {
+				if(p0.x == p1.x){
+					intersection = {p0.x, pos.y};
+					return (pos.x-p0.x)*(pos.x-p0.x);
+				}
+				else if(p0.y == p1.y){
+					intersection = {pos.x, p0.y};
+					return (pos.y-p0.y)*(pos.y-p0.y);
+				}
+				else{
+					float m1, m2, b1, b2;
+					m1 = (p1.y-p0.y)/(p1.x-p0.x);
+					b1 = p0.y-(m1*p0.x);
+					m2 = -1.f/m1;
+					b2 = pos.y-(m2*pos.x);
+					intersection.x = (b2-b1)/(m1-m2);
+					intersection.y = (b2*m1-b1*m2)/(m1-m2);
+					return glm::distance2(pos, intersection);
+				}
+			};
+			for(int i = 0; i < quad.size(); ++i) {
+				auto p0 = quad[i];
+				auto p1 = quad[(i+1)&3];
+				glm::vec2 inter;
+				float dist = calcDistance2ToLine(pos, p0, p1, inter);
+				if(dist < distance) {
+					distance = dist;
+					result = inter;
+					float position = p1.x == p0.x ?
+									 p1.y == p0.y ? : 0
+									: (pos.y-p0.y)/(p1.y-p0.y);
+					switch(i) {
+						case 0: dst_findex = {col+position, row}; break;
+						case 1: dst_findex = {col+1, row+position}; break;
+						case 2: dst_findex = {col+1-position, row+1}; break;
+						case 3: dst_findex = {col, row+1-position}; break;
+					}
+					is_row = ((i&1) == 0);
+					found = true;
+				}
+			}
+			break;
+		}
+	}
+	return found;
 }

@@ -17,7 +17,7 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-	ofMesh mesh = up_sampler_.proc(*mesh_, 0.01f);
+	ofMesh mesh = up_sampler_.proc(*mesh_, 0.1f);
 	ofPushMatrix();
 	ofScale(ofGetWidth(), ofGetHeight());
 	texture_.bind();
@@ -25,6 +25,18 @@ void ofApp::draw(){
 	texture_.unbind();
 	mesh.drawWireframe();
 	ofPopMatrix();
+	
+	glm::vec2 pos(ofGetMouseX()/(float)ofGetWidth(), ofGetMouseY()/(float)ofGetHeight());
+	glm::vec2 dst_index;
+	glm::vec2 result;
+	bool is_row;
+	if(mesh_->getNearestPointOnLine(pos, dst_index, result, is_row)) {
+		ofPushStyle();
+		ofSetColor(is_row ? ofColor::red : ofColor::yellow);
+		glm::vec2 screen_size(ofGetWidth(),ofGetHeight());
+		ofDrawCircle(result*screen_size, 10);
+		ofPopStyle();
+	}
 }
 
 //--------------------------------------------------------------
@@ -82,7 +94,7 @@ void ofApp::mousePressed(int x, int y, int button){
 	if(button == OF_MOUSE_BUTTON_RIGHT) {
 		glm::vec2 pos(x/(float)ofGetWidth(), y/(float)ofGetHeight());
 		glm::vec2 div_pos;
-		if(mesh_->getDividePoint(pos, div_pos)) {
+		if(mesh_->getIndexOfPoint(pos, div_pos)) {
 			int col = div_pos.x;
 			int row = div_pos.y;
 			mesh_->divideCol(col, div_pos.x-col);

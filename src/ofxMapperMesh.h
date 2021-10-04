@@ -42,13 +42,16 @@ public:
 	PointRef getPoint(int col, int row);
 	ConstPointRef getPoint(int col, int row) const;
 	
-	bool getDividePoint(const glm::vec2 &pos, glm::vec2 &dst) const;
+	bool getIndexOfPoint(const glm::vec2 &pos, glm::vec2 &dst_findex) const;
+	bool getNearestPoint(const glm::vec2 &pos, glm::ivec2 &dst_index, glm::vec2 &result) const;
+	bool getNearestPointOnLine(const glm::vec2 &pos, glm::vec2 &dst_findex, glm::vec2 &result, bool &is_row) const;
 	
 private:
 	ofMesh mesh_;
 	glm::ivec2 num_cells_;
 	void resetMesh(const glm::ivec2 &num_cells);
 	void resetIndices();
+	int getIndex(int col, int row) const { return col*(num_cells_.y+1)+row; };
 	
 	void divideRowImpl(int index, float offset);
 	void divideColImpl(int index, float offset);
