@@ -1,19 +1,17 @@
 #include "EditorFrame.h"
-#include <glm/vec2.hpp>
-#include "ofTexture.h"
 #include "ofGraphics.h"
+#include "ofAppRunner.h"
+#include "ofEventUtils.h"
 
 void EditorWindow::setup()
 {
-	enable();
-	scale_ = 200;
-	setMesh(std::make_shared<ofx::mapper::Mesh>());
-	mesh_->init({3,3});
+	enableMouseInteraction();
+	scale_ = settings_.min_scale;
 }
 
-void EditorWindow::enable()
+void EditorWindow::enableMouseInteraction()
 {
-	if((is_enabled_ ^= true) == true) {
+	if((is_enabled_mouse_interaction_ ^= true) == true) {
 		auto &ev = ofEvents();
 		ofAddListener(ev.mousePressed, this, &EditorWindow::onMouseEvent);
 		ofAddListener(ev.mouseReleased, this, &EditorWindow::onMouseEvent);
@@ -22,9 +20,9 @@ void EditorWindow::enable()
 		ofAddListener(ev.mouseScrolled, this, &EditorWindow::onMouseEvent);
 	}
 }
-void EditorWindow::disable()
+void EditorWindow::disableMouseInteraction()
 {
-	if((is_enabled_ ^= true) == false) {
+	if((is_enabled_mouse_interaction_ ^= true) == false) {
 		auto &ev = ofEvents();
 		ofRemoveListener(ev.mousePressed, this, &EditorWindow::onMouseEvent);
 		ofRemoveListener(ev.mouseReleased, this, &EditorWindow::onMouseEvent);
@@ -34,60 +32,82 @@ void EditorWindow::disable()
 	}
 }
 
-void EditorWindow::draw(ofTexture &texture) const
+void EditorWindow::pushMatrix() const
 {
-	bool is_scissor_enabled = glIsEnabled(GL_SCISSOR_TEST);
-	GLint scissor_box[4];
-	if(is_scissor_enabled) {
-		glGetIntegerv(GL_SCISSOR_BOX, scissor_box);
+	ofPushMatrix();
+	ofTranslate(region_.position);
+	ofScale(scale_, scale_);
+	ofTranslate(-offset_);
+}
+void EditorWindow::popMatrix() const
+{
+	ofPopMatrix();
+}
+void EditorWindow::beginScissor() const
+{
+	scissor_cache_.is_enabled = glIsEnabled(GL_SCISSOR_TEST);
+	if(scissor_cache_.is_enabled) {
+		glGetIntegerv(GL_SCISSOR_BOX, scissor_cache_.box);
 	}
 	else {
 		glEnable(GL_SCISSOR_TEST);
 	}
-	glScissor(rect_.getLeft(), ofGetHeight()-rect_.getBottom(), rect_.getWidth(), rect_.getHeight());
-	ofPushMatrix();
-	ofTranslate(rect_.position);
-	ofPushMatrix();
-	ofScale(scale_, scale_);
-	ofTranslate(-offset_);
-	texture.bind();
-	mesh_->getMesh().draw();
-	texture.unbind();
-	ofPopMatrix();
-
-	glm::vec2 pos = mouse_pos_ + offset_;
-	glm::vec2 dst_index;
-	glm::vec2 result;
-	bool is_row;
-	if(mesh_->getNearestPointOnLine(pos, dst_index, result, is_row)) {
-		ofPushStyle();
-		ofSetColor(is_row ? ofColor::red : ofColor::yellow);
-		ofDrawCircle((result-offset_)*scale_, 10);
-		ofPopStyle();
-	}
-	ofPopMatrix();
-	
-	if(is_scissor_enabled) {
-		glScissor(scissor_box[0], scissor_box[1], scissor_box[2], scissor_box[3]);
+	glScissor(region_.getLeft(), ofGetHeight()-region_.getBottom(), region_.getWidth(), region_.getHeight());
+}
+void EditorWindow::endScissor() const
+{
+	if(scissor_cache_.is_enabled) {
+		glScissor(scissor_cache_.box[0], scissor_cache_.box[1], scissor_cache_.box[2], scissor_cache_.box[3]);
 	}
 	else {
 		glDisable(GL_SCISSOR_TEST);
 	}
 }
 
+
+glm::vec2 EditorWindow::getIn(const glm::vec2 &pos) const
+{
+	return (pos-glm::vec2(region_.position))/scale_ + offset_;
+}
+glm::vec2 EditorWindow::getOut(const glm::vec2 &pos) const
+{
+	return (pos - offset_)*scale_ + glm::vec2(region_.position);
+}
+
 void EditorWindow::onMouseEvent(ofMouseEventArgs &arg)
 {
 	auto mouse_pos_prev = mouse_pos_;
-	mouse_pos_ = ((glm::vec2&)arg-rect_.position)/scale_;
+	mouse_pos_ = getIn(arg) - offset_;
+	ofRectangle select_rect(mouse_pos_pressed_, mouse_pos_);
+	select_rect.position += glm::vec3(offset_, 0);
 	switch(arg.type) {
+		case ofMouseEventArgs::Pressed:
+			mouse_pos_pressed_ = mouse_pos_;
+			break;
 		case ofMouseEventArgs::Dragged:
-			if(arg.button == OF_MOUSE_BUTTON_LEFT) {
-				offset_ += mouse_pos_ - mouse_pos_prev;
-			}
-			else {
-				scale_ += mouse_pos_.y - mouse_pos_prev.y;
+			switch(arg.button) {
+				case OF_MOUSE_BUTTON_LEFT:
+					offset_ -= mouse_pos_ - mouse_pos_prev;
+					break;
+				case OF_MOUSE_BUTTON_RIGHT:
+					ofNotifyEvent(on_rect_selection_, RectSelectionArg{select_rect, false}, this);
+					break;
 			}
 			break;
-			
+		case ofMouseEventArgs::Released:
+			switch(arg.button) {
+				case OF_MOUSE_BUTTON_RIGHT:
+					ofNotifyEvent(on_rect_selection_, RectSelectionArg{select_rect, true}, this);
+					break;
+			}
+			break;
+		case ofMouseEventArgs::Scrolled: {
+			float scale_prev = scale_;
+			scale_ -= arg.scrollY;
+			if(scale_ < settings_.min_scale) {
+				scale_ = settings_.min_scale;
+			}
+			offset_ -= mouse_pos_*(1-scale_/scale_prev);
+		}	break;
 	}
 }
