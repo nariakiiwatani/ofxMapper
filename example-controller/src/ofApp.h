@@ -3,6 +3,7 @@
 #include "ofMain.h"
 #include "EditorFrame.h"
 #include "ofxMapperMesh.h"
+#include "ofxMapperSelector.h"
 
 class ofApp : public ofBaseApp{
 	
@@ -23,9 +24,10 @@ public:
 	void dragEvent(ofDragInfo dragInfo);
 	void gotMessage(ofMessage msg);
 private:
-	ofx::mapper::Mesh mesh_;
+	std::shared_ptr<ofx::mapper::Mesh> mesh_;
 	EditorWindow editor_;
 	ofTexture texture_;
+	ofx::mapper::Selector selector_;
 	
 	void onRectSelection(const EditorWindow::RectSelectionArg &arg);
 	ofRectangle rect_selection_;

@@ -4,6 +4,11 @@
 
 using namespace ofx::mapper;
 
+Selector::~Selector()
+{
+	setMesh(nullptr);
+}
+
 void Selector::setMesh(std::shared_ptr<Mesh> mesh)
 {
 	if(auto m = mesh_.lock()) {
@@ -13,13 +18,15 @@ void Selector::setMesh(std::shared_ptr<Mesh> mesh)
 		ofRemoveListener(m->onDeleteCol, this, &Selector::onDeleteCol);
 		ofRemoveListener(m->onReset, this, &Selector::onResetMesh);
 	}
-	ofAddListener(mesh->onDivideRow, this, &Selector::onDivideRow);
-	ofAddListener(mesh->onDivideCol, this, &Selector::onDivideCol);
-	ofAddListener(mesh->onDeleteRow, this, &Selector::onDeleteRow);
-	ofAddListener(mesh->onDeleteCol, this, &Selector::onDeleteCol);
-	ofAddListener(mesh->onReset, this, &Selector::onResetMesh);
+	if(mesh) {
+		ofAddListener(mesh->onDivideRow, this, &Selector::onDivideRow);
+		ofAddListener(mesh->onDivideCol, this, &Selector::onDivideCol);
+		ofAddListener(mesh->onDeleteRow, this, &Selector::onDeleteRow);
+		ofAddListener(mesh->onDeleteCol, this, &Selector::onDeleteCol);
+		ofAddListener(mesh->onReset, this, &Selector::onResetMesh);
+		onResetMesh({mesh->getNumCols(), mesh->getNumRows()});
+	}
 	mesh_ = mesh;
-	onResetMesh({mesh->getNumCols(), mesh->getNumRows()});
 }
 
 std::vector<Mesh::PointRef> Selector::getSelected()
@@ -32,6 +39,23 @@ std::vector<Mesh::PointRef> Selector::getSelected()
 		for(int c = 0; c < row.size(); ++c) {
 			if(row[c]) {
 				ret.push_back(mesh->getPoint(c,r));
+			}
+		}
+	}
+	return ret;
+}
+
+std::vector<int> Selector::getPointsInside(const ofRectangle &rect) const
+{
+	auto mesh = mesh_.lock();
+	if(!mesh) return {};
+	std::vector<int> ret;
+	for(int r = 0; r < selected_.size(); ++r) {
+		auto &row = selected_[r];
+		for(int c = 0; c < row.size(); ++c) {
+			auto &&pos = mesh->getPoint(c, r);
+			if(rect.inside(pos.v->x, pos.v->y)) {
+				ret.push_back(c*selected_.size()+r);
 			}
 		}
 	}
@@ -55,6 +79,15 @@ void Selector::selectCol(int index)
 	for(int i = 0; i < rows; ++i) {
 		selectPoint(index, i);
 	}
+}
+void Selector::selectPoint(int index)
+{
+	if(selected_.empty()) {
+		return;
+	}
+	int row = index%selected_.size();
+	int col = index/selected_.size();
+	selectPoint(col, row);
 }
 void Selector::selectPoint(int col, int row)
 {
@@ -92,6 +125,15 @@ void Selector::toggleCol(int index)
 		togglePoint(index, i);
 	}
 }
+void Selector::togglePoint(int index)
+{
+	if(selected_.empty()) {
+		return;
+	}
+	int row = index%selected_.size();
+	int col = index/selected_.size();
+	togglePoint(col, row);
+}
 void Selector::togglePoint(int col, int row)
 {
 	if(selected_.empty()
@@ -128,6 +170,15 @@ void Selector::clearCol(int index)
 	for(int i = 0; i < rows; ++i) {
 		clearPoint(index, i);
 	}
+}
+void Selector::clearPoint(int index)
+{
+	if(selected_.empty()) {
+		return;
+	}
+	int row = index%selected_.size();
+	int col = index/selected_.size();
+	clearPoint(col, row);
 }
 void Selector::clearPoint(int col, int row)
 {
@@ -183,9 +234,9 @@ void Selector::onDeleteCol(int &index)
 
 void Selector::onResetMesh(const glm::ivec2 &num_cells)
 {
-	selected_.resize(num_cells.x+1);
+	selected_.resize(num_cells.y+1);
 	for(auto &row : selected_) {
-		row.assign(num_cells.y+1, false);
+		row.assign(num_cells.x+1, false);
 	}
 	clearAll();
 }

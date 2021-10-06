@@ -11,21 +11,27 @@ namespace mapper {
 class Selector
 {
 public:
+	virtual ~Selector();
 	void setMesh(std::shared_ptr<Mesh> mesh);
 	std::vector<Mesh::PointRef> getSelected();
 	
+	std::vector<int> getPointsInside(const ofRectangle &rect) const;
+	
 	void selectRow(int index);
 	void selectCol(int index);
+	void selectPoint(int index);
 	void selectPoint(int col, int row);
 	void selectAll();
 	
 	void toggleRow(int index);
 	void toggleCol(int index);
+	void togglePoint(int index);
 	void togglePoint(int col, int row);
 	void toggleAll();
 	
 	void clearRow(int index);
 	void clearCol(int index);
+	void clearPoint(int index);
 	void clearPoint(int col, int row);
 	void clearAll();
 protected:

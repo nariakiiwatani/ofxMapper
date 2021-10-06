@@ -39,7 +39,6 @@ protected:
 	ofRectangle region_;
 	glm::vec2 mouse_pos_;
 	glm::vec2 mouse_pos_pressed_;
-	glm::vec2 getIn(const glm::vec2 &outer_pos) const;
 	
 	struct Settings {
 		float min_scale = 100;

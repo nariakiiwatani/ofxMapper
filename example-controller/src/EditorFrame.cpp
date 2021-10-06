@@ -76,8 +76,11 @@ glm::vec2 EditorWindow::getOut(const glm::vec2 &pos) const
 
 void EditorWindow::onMouseEvent(ofMouseEventArgs &arg)
 {
+	auto convert = [&](const glm::vec2 &pos) {
+		return getIn(pos) - offset_;
+	};
 	auto mouse_pos_prev = mouse_pos_;
-	mouse_pos_ = getIn(arg) - offset_;
+	mouse_pos_ = convert(arg);
 	ofRectangle select_rect(mouse_pos_pressed_, mouse_pos_);
 	select_rect.position += glm::vec3(offset_, 0);
 	switch(arg.type) {
