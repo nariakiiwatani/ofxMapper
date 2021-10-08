@@ -14,8 +14,12 @@ public:
 	virtual ~Selector();
 	void setMesh(std::shared_ptr<Mesh> mesh);
 	std::vector<Mesh::PointRef> getSelected();
+	std::vector<Mesh::ConstPointRef> getSelected() const;
 	
 	std::vector<int> getPointsInside(const ofRectangle &rect) const;
+	
+	bool isSelected(int index) const;
+	bool isSelected(int col, int row) const;
 	
 	void selectRow(int index);
 	void selectCol(int index);

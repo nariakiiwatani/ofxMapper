@@ -18,6 +18,7 @@ void Selector::setMesh(std::shared_ptr<Mesh> mesh)
 		ofRemoveListener(m->onDeleteCol, this, &Selector::onDeleteCol);
 		ofRemoveListener(m->onReset, this, &Selector::onResetMesh);
 	}
+	mesh_ = mesh;
 	if(mesh) {
 		ofAddListener(mesh->onDivideRow, this, &Selector::onDivideRow);
 		ofAddListener(mesh->onDivideCol, this, &Selector::onDivideCol);
@@ -26,7 +27,6 @@ void Selector::setMesh(std::shared_ptr<Mesh> mesh)
 		ofAddListener(mesh->onReset, this, &Selector::onResetMesh);
 		onResetMesh({mesh->getNumCols(), mesh->getNumRows()});
 	}
-	mesh_ = mesh;
 }
 
 std::vector<Mesh::PointRef> Selector::getSelected()
@@ -34,6 +34,22 @@ std::vector<Mesh::PointRef> Selector::getSelected()
 	auto mesh = mesh_.lock();
 	if(!mesh) return {};
 	std::vector<Mesh::PointRef> ret;
+	for(int r = 0; r < selected_.size(); ++r) {
+		auto &row = selected_[r];
+		for(int c = 0; c < row.size(); ++c) {
+			if(row[c]) {
+				ret.push_back(mesh->getPoint(c,r));
+			}
+		}
+	}
+	return ret;
+}
+
+std::vector<Mesh::ConstPointRef> Selector::getSelected() const
+{
+	std::shared_ptr<const Mesh> mesh = mesh_.lock();
+	if(!mesh) return {};
+	std::vector<Mesh::ConstPointRef> ret;
 	for(int r = 0; r < selected_.size(); ++r) {
 		auto &row = selected_[r];
 		for(int c = 0; c < row.size(); ++c) {
@@ -62,6 +78,25 @@ std::vector<int> Selector::getPointsInside(const ofRectangle &rect) const
 	return ret;
 }
 
+bool Selector::isSelected(int index) const
+{
+	if(selected_.empty()) {
+		return false;
+	}
+	int row = index%selected_.size();
+	int col = index/selected_.size();
+	return isSelected(col, row);
+}
+bool Selector::isSelected(int col, int row) const
+{
+	if(selected_.empty()
+	   || selected_.size() <= row
+	   || selected_[row].size() <= col
+	   ) {
+		return false;
+	}
+	return selected_[row][col];
+}
 
 void Selector::selectRow(int index)
 {

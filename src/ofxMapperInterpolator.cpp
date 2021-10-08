@@ -115,3 +115,34 @@ void Interpolator::update()
 		}
 	}
 }
+
+void Interpolator::update(std::shared_ptr<Mesh> dst) const
+{
+	auto mesh = mesh_.lock();
+	if(!mesh) {
+		return;
+	}
+	auto copy = [](const Mesh::PointRef src, Mesh::PointRef dst) {
+		dst.col = src.col;
+		dst.row = src.row;
+		*dst.v = *src.v;
+		*dst.t = *src.t;
+		*dst.c = *src.c;
+		*dst.n = *src.n;
+	};
+	dst->init({mesh->getNumCols(), mesh->getNumRows()});
+	Interpolator proc;
+	proc.setMesh(dst);
+	int cols = mesh->getNumCols()+1;
+	int rows = mesh->getNumRows()+1;
+	for(int r = 0; r < rows; ++r) {
+		for(int c = 0; c < cols; ++c) {
+			if(selected_[r][c]) {
+				copy(mesh->getPoint(c,r), dst->getPoint(c,r));
+				proc.selectPoint(c,r);
+				continue;
+			}
+		}
+	}
+	proc.update();
+}

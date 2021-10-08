@@ -9,12 +9,13 @@ class ofTexture;
 class EditorWindow
 {
 public:
+	~EditorWindow();
 	void setup();
 
 	void pushMatrix() const;
 	void popMatrix() const;
-	void beginScissor() const;
-	void endScissor() const;
+	void pushScissor() const;
+	void popScissor() const;
 	
 	void enableMouseInteraction();
 	void disableMouseInteraction();
@@ -25,12 +26,18 @@ public:
 	
 	glm::vec2 getIn(const glm::vec2 &outer_pos) const;
 	glm::vec2 getOut(const glm::vec2 &inner_pos) const;
+	float getScale() const { return scale_; }
 
 	void onMouseEvent(ofMouseEventArgs &arg);
+	struct PointSelectionArg {
+		glm::vec2 pos;
+		bool finished;
+	};
 	struct RectSelectionArg {
 		ofRectangle rect;
 		bool finished;
 	};
+	ofEvent<const PointSelectionArg> on_point_selection_;
 	ofEvent<const RectSelectionArg> on_rect_selection_;
 protected:
 	bool is_enabled_mouse_interaction_=false;

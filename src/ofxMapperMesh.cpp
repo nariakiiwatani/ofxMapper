@@ -344,6 +344,25 @@ Mesh::ConstPointRef Mesh::getPoint(int col, int row) const
 	return ret;
 }
 
+bool Mesh::isInside(const glm::vec2 &pos) const
+{
+	for(int row = 0; row < num_cells_.y; ++row) {
+		for(int col = 0; col < num_cells_.x; ++col) {
+			ofPolyline quad;
+			quad.addVertex(mesh_.getVertex(getIndex(col, row)));
+			quad.addVertex(mesh_.getVertex(getIndex(col+1, row)));
+			quad.addVertex(mesh_.getVertex(getIndex(col+1, row+1)));
+			quad.addVertex(mesh_.getVertex(getIndex(col, row+1)));
+			quad.close();
+			if(!quad.inside(pos.x, pos.y)) {
+				continue;
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
 bool Mesh::getIndexOfPoint(const glm::vec2 &pos, glm::vec2 &dst_findex) const
 {
 	for(int row = 0; row < num_cells_.y; ++row) {
@@ -397,13 +416,13 @@ bool Mesh::getIndexOfPoint(const glm::vec2 &pos, glm::vec2 &dst_findex) const
 			return false;
 		}
 	}
-	ofLogWarning(LOG_TITLE) << "not found";
 	return false;
 }
 
-bool Mesh::getNearestPoint(const glm::vec2 &pos, glm::ivec2 &dst_index, glm::vec2 &result) const
+bool Mesh::getNearestPoint(const glm::vec2 &pos, glm::ivec2 &dst_index, glm::vec2 &result, float max_distance) const
 {
-	float distance2 = std::numeric_limits<float>::max();
+	bool found = false;
+	float distance2 = max_distance > 0 ? max_distance*max_distance : std::numeric_limits<float>::max();
 	for(int row = 0; row <= num_cells_.y; ++row) {
 		for(int col = 0; col <= num_cells_.x; ++col) {
 			auto &&point = mesh_.getVertex(getIndex(col, row));
@@ -412,15 +431,16 @@ bool Mesh::getNearestPoint(const glm::vec2 &pos, glm::ivec2 &dst_index, glm::vec
 				dst_index = {col, row};
 				result = point;
 				distance2 = dist2;
+				found = true;
 			}
 		}
 	}
-	return true;
+	return found;
 }
-bool Mesh::getNearestPointOnLine(const glm::vec2 &pos, glm::vec2 &dst_findex, glm::vec2 &result, bool &is_row) const
+bool Mesh::getNearestPointOnLine(const glm::vec2 &pos, glm::vec2 &dst_findex, glm::vec2 &result, bool &is_row, float max_distance) const
 {
 	bool found = false;
-	float distance = std::numeric_limits<float>::max();
+	float distance2 = max_distance > 0 ? max_distance*max_distance : std::numeric_limits<float>::max();
 	for(int row = 0; row < num_cells_.y; ++row) {
 		for(int col = 0; col < num_cells_.x; ++col) {
 			ofPolyline quad;
@@ -457,17 +477,18 @@ bool Mesh::getNearestPointOnLine(const glm::vec2 &pos, glm::vec2 &dst_findex, gl
 				auto p1 = quad[(i+1)&3];
 				glm::vec2 inter;
 				float dist = calcDistance2ToLine(pos, p0, p1, inter);
-				if(dist < distance) {
-					distance = dist;
+				if(dist < distance2) {
+					distance2 = dist;
 					result = inter;
-					float position = p1.x == p0.x ?
-									 p1.y == p0.y ? : 0
-									: (pos.y-p0.y)/(p1.y-p0.y);
+					glm::vec2 position = {
+						p1.x == p0.x ? 0 : (pos.x-p0.x)/(p1.x-p0.x),
+						p1.y == p0.y ? 0 : (pos.y-p0.y)/(p1.y-p0.y),
+					};
 					switch(i) {
-						case 0: dst_findex = {col+position, row}; break;
-						case 1: dst_findex = {col+1, row+position}; break;
-						case 2: dst_findex = {col+1-position, row+1}; break;
-						case 3: dst_findex = {col, row+1-position}; break;
+						case 0: dst_findex = {col+position.x, row}; break;
+						case 1: dst_findex = {col+1, row+position.y}; break;
+						case 2: dst_findex = {col+1-position.x, row+1}; break;
+						case 3: dst_findex = {col, row+1-position.y}; break;
 					}
 					is_row = ((i&1) == 0);
 					found = true;

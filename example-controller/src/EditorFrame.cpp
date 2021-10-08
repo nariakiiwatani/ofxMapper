@@ -3,6 +3,11 @@
 #include "ofAppRunner.h"
 #include "ofEventUtils.h"
 
+EditorWindow::~EditorWindow()
+{
+	disableMouseInteraction();
+}
+
 void EditorWindow::setup()
 {
 	enableMouseInteraction();
@@ -43,7 +48,7 @@ void EditorWindow::popMatrix() const
 {
 	ofPopMatrix();
 }
-void EditorWindow::beginScissor() const
+void EditorWindow::pushScissor() const
 {
 	scissor_cache_.is_enabled = glIsEnabled(GL_SCISSOR_TEST);
 	if(scissor_cache_.is_enabled) {
@@ -54,7 +59,7 @@ void EditorWindow::beginScissor() const
 	}
 	glScissor(region_.getLeft(), ofGetHeight()-region_.getBottom(), region_.getWidth(), region_.getHeight());
 }
-void EditorWindow::endScissor() const
+void EditorWindow::popScissor() const
 {
 	if(scissor_cache_.is_enabled) {
 		glScissor(scissor_cache_.box[0], scissor_cache_.box[1], scissor_cache_.box[2], scissor_cache_.box[3]);
@@ -86,6 +91,13 @@ void EditorWindow::onMouseEvent(ofMouseEventArgs &arg)
 	switch(arg.type) {
 		case ofMouseEventArgs::Pressed:
 			mouse_pos_pressed_ = mouse_pos_;
+			switch(arg.button) {
+				case OF_MOUSE_BUTTON_LEFT:
+					ofNotifyEvent(on_point_selection_, PointSelectionArg{mouse_pos_pressed_+offset_, false}, this);
+					break;
+				case OF_MOUSE_BUTTON_RIGHT:
+					break;
+			}
 			break;
 		case ofMouseEventArgs::Dragged:
 			switch(arg.button) {
@@ -99,6 +111,11 @@ void EditorWindow::onMouseEvent(ofMouseEventArgs &arg)
 			break;
 		case ofMouseEventArgs::Released:
 			switch(arg.button) {
+				case OF_MOUSE_BUTTON_LEFT:
+					if(mouse_pos_ == mouse_pos_pressed_) {
+						ofNotifyEvent(on_point_selection_, PointSelectionArg{mouse_pos_pressed_+offset_, true}, this);
+					}
+					break;
 				case OF_MOUSE_BUTTON_RIGHT:
 					ofNotifyEvent(on_rect_selection_, RectSelectionArg{select_rect, true}, this);
 					break;

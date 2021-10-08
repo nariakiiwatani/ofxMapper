@@ -42,9 +42,10 @@ public:
 	PointRef getPoint(int col, int row);
 	ConstPointRef getPoint(int col, int row) const;
 	
+	bool isInside(const glm::vec2 &pos) const;
 	bool getIndexOfPoint(const glm::vec2 &pos, glm::vec2 &dst_findex) const;
-	bool getNearestPoint(const glm::vec2 &pos, glm::ivec2 &dst_index, glm::vec2 &result) const;
-	bool getNearestPointOnLine(const glm::vec2 &pos, glm::vec2 &dst_findex, glm::vec2 &result, bool &is_row) const;
+	bool getNearestPoint(const glm::vec2 &pos, glm::ivec2 &dst_index, glm::vec2 &result, float max_distance=0) const;
+	bool getNearestPointOnLine(const glm::vec2 &pos, glm::vec2 &dst_findex, glm::vec2 &result, bool &is_row, float max_distance=0) const;
 	
 private:
 	ofMesh mesh_;

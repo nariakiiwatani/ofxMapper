@@ -8,6 +8,7 @@ class Interpolator : public Selector
 {
 public:
 	void update();
+	void update(std::shared_ptr<Mesh> dst) const;
 	void selectCorners();
 protected:
 	void onResetMesh(const glm::ivec2 &num_cells) override;
