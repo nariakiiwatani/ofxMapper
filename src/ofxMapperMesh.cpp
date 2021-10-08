@@ -110,7 +110,7 @@ void Mesh::load(const std::string &filepath)
 	ofFile file(filepath);
 	io::Header header;
 	file >> header;
-	resetMesh({header.col, header.row});
+	resetMesh({header.col, header.row}, {0,0,1,1}, {0,0,1,1});
 	for(int i = 0; i < header.num; ++i) {
 		io::Point point;
 		file >> point;
@@ -123,18 +123,24 @@ void Mesh::load(const std::string &filepath)
 	file.close();
 }
 
-void Mesh::resetMesh(const glm::ivec2 &num_cells)
+void Mesh::resetMesh(const glm::ivec2 &num_cells, const ofRectangle &vert_rect, const ofRectangle &coord_rect)
 {
 	num_cells_ = glm::ivec2(1,1);
 	mesh_.clear();
 	mesh_.addVertices({
-		{0,0,0},{0,1,0},{1,0,0},{1,1,0}
+		vert_rect.getTopLeft(),
+		vert_rect.getBottomLeft(),
+		vert_rect.getTopRight(),
+		vert_rect.getBottomRight(),
 	});
 	mesh_.addColors({
 		{1},{1},{1},{1}
 	});
 	mesh_.addTexCoords({
-		{0,0},{0,1},{1,0},{1,1}
+		coord_rect.getTopLeft(),
+		coord_rect.getBottomLeft(),
+		coord_rect.getTopRight(),
+		coord_rect.getBottomRight(),
 	});
 	mesh_.addNormals({
 		{0,0,1},{0,0,1},{0,0,1},{0,0,1}

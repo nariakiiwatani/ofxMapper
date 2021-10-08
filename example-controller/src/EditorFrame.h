@@ -48,7 +48,7 @@ protected:
 	glm::vec2 mouse_pos_pressed_;
 	
 	struct Settings {
-		float min_scale = 100;
+		float min_scale = 0.1f;
 	} settings_;
 private:
 	struct ScissorCache {

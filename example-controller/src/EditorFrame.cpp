@@ -11,7 +11,6 @@ EditorWindow::~EditorWindow()
 void EditorWindow::setup()
 {
 	enableMouseInteraction();
-	scale_ = settings_.min_scale;
 }
 
 void EditorWindow::enableMouseInteraction()
@@ -123,7 +122,7 @@ void EditorWindow::onMouseEvent(ofMouseEventArgs &arg)
 			break;
 		case ofMouseEventArgs::Scrolled: {
 			float scale_prev = scale_;
-			scale_ -= arg.scrollY;
+			scale_ *= pow(2, arg.scrollY/10.f);
 			if(scale_ < settings_.min_scale) {
 				scale_ = settings_.min_scale;
 			}

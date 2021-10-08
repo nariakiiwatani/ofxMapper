@@ -9,7 +9,7 @@ namespace mapper {
 class Mesh
 {
 public:
-	void init(const glm::ivec2 &num_cells = glm::ivec2(1,1)) { resetMesh(num_cells); }
+	void init(const glm::ivec2 &num_cells = glm::ivec2(1,1), const ofRectangle &vert_rect = ofRectangle(0,0,1,1), const ofRectangle &coord_rect = ofRectangle(0,0,1,1)) { resetMesh(num_cells, vert_rect, coord_rect); }
 	const ofMesh& getMesh() const { return mesh_; }
 	
 	void save(const std::string &filepath) const;
@@ -50,7 +50,7 @@ public:
 private:
 	ofMesh mesh_;
 	glm::ivec2 num_cells_;
-	void resetMesh(const glm::ivec2 &num_cells);
+	void resetMesh(const glm::ivec2 &num_cells, const ofRectangle &vert_rect, const ofRectangle &coord_rect);
 	void resetIndices();
 	int getIndex(int col, int row) const { return col*(num_cells_.y+1)+row; };
 	
