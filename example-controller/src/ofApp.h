@@ -37,6 +37,7 @@ private:
 	ofRectangle rect_selection_;
 	bool rect_selecting_=false;
 	glm::vec2 mesh_pointer_index_;
+	bool is_pointer_in_mesh_;
 	bool is_pointer_on_mesh_point_;
 	bool is_pointer_on_line_, is_pointer_on_row_;
 };

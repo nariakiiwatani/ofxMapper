@@ -43,6 +43,30 @@ void Interpolator::update()
 	if(!mesh) {
 		return;
 	}
+	auto deleteRowIfEmpty = [&](int row) {
+		int cols = mesh->getNumCols()+1;
+		for(int col = 0; col < cols; ++col) {
+			if(isSelected(col, row)) {
+				return;
+			}
+		}
+		mesh->deleteRow(row);
+	};
+	auto deleteColIfEmpty = [&](int col) {
+		int rows = mesh->getNumRows()+1;
+		for(int row = 0; row < rows; ++row) {
+			if(isSelected(col, row)) {
+				return;
+			}
+		}
+		mesh->deleteCol(col);
+	};
+	for(int i = mesh->getNumCols(); i-- > 1;) {
+		deleteColIfEmpty(i);
+	}
+	for(int i = mesh->getNumRows(); i-- > 1;) {
+		deleteRowIfEmpty(i);
+	}
 	auto gatherPinsX = [&](glm::ivec2 center) {
 		int row = center.y;
 		std::vector<std::pair<Mesh::PointRef, float>> ret = {

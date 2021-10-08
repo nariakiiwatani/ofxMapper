@@ -23,6 +23,7 @@ void ofApp::onPointSelection(const EditorWindow::PointSelectionArg &arg)
 		if(is_pointer_on_mesh_point_) {
 			if(ofGetKeyPressed(OF_KEY_COMMAND)) {
 				interpolator_.togglePoint(mesh_pointer_index_.x, mesh_pointer_index_.y);
+				interpolator_.selectCorners();
 			}
 			else if(interpolator_.isSelected(mesh_pointer_index_.x, mesh_pointer_index_.y)) {
 				if(ofGetKeyPressed(OF_KEY_SHIFT)) {
@@ -54,7 +55,7 @@ void ofApp::onPointSelection(const EditorWindow::PointSelectionArg &arg)
 					interpolator_.selectPoint(col_index, row_index+1);
 				}
 			}
-			else {
+			else if(is_pointer_in_mesh_) {
 				int col_index = mesh_pointer_index_.x;
 				int row_index = mesh_pointer_index_.y;
 				mesh_->divideCol(col_index, mesh_pointer_index_.x - col_index);
@@ -153,6 +154,7 @@ void ofApp::draw(){
 	glm::vec2 pos = editor_.getIn({ofGetMouseX(), ofGetMouseY()});
 	is_pointer_on_mesh_point_ = false;
 	is_pointer_on_line_ = false;
+	is_pointer_in_mesh_ = true;
 	glm::ivec2 dst_index;
 	glm::vec2 result;
 	if(mesh_->getNearestPoint(pos, dst_index, result, find_distance/editor_.getScale())) {
@@ -176,6 +178,9 @@ void ofApp::draw(){
 		ofSetColor(ofColor::green);
 		ofDrawCircle(editor_.getOut(pos), find_distance);
 		ofPopStyle();
+	}
+	else {
+		is_pointer_in_mesh_ = false;
 	}
 	editor_.popScissor();
 }
