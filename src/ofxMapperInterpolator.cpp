@@ -43,25 +43,47 @@ void Interpolator::update()
 	if(!mesh) {
 		return;
 	}
-	auto gatherPins = [](glm::vec2 center, const std::vector<Mesh::PointRef> &candidates, int num_desired, float distance_max=-1) {
-		std::vector<std::pair<const Mesh::PointRef, float>> ret;
-		std::multimap<float, Mesh::PointRef> distance_map;
-		for(auto &&c : candidates) {
-			if(c.col == center.x && c.row == center.y) continue;
-			// TODO: centerから見て同じ方向にある点は一番近いものしか使わない的な処理が必要かも
-			distance_map.insert(std::make_pair(glm::distance(center, glm::vec2(c.col, c.row)), c));
-		}
-		float last_distance = 0;
-		for(auto &&c : distance_map) {
-			if((distance_max >= 0 && c.first > distance_max) || (ret.size() >= num_desired && last_distance != c.first)) {
+	auto gatherPinsX = [&](glm::ivec2 center) {
+		int row = center.y;
+		std::vector<std::pair<Mesh::PointRef, float>> ret = {
+			{ mesh->getPoint(0, row), center.x },
+			{ mesh->getPoint(mesh->getNumCols(), row), mesh->getNumCols()-center.x }
+		};
+		for(int col = center.x; --col >= 0;) {
+			if(isSelected(col, row)) {
+				ret[0] = {mesh->getPoint(col, row), center.x - col};
 				break;
 			}
-			ret.push_back(std::make_pair(c.second, c.first));
-			last_distance = c.first;
+		}
+		for(int col = center.x; ++col <= mesh->getNumCols();) {
+			if(isSelected(col, row)) {
+				ret[1] = {mesh->getPoint(col, row), col - center.x};
+				break;
+			}
 		}
 		return ret;
 	};
-	auto interpolate = [](std::vector<std::pair<const Mesh::PointRef, float>> pins, Mesh::PointRef dst) {
+	auto gatherPinsY = [&](glm::ivec2 center) {
+		int col = center.x;
+		std::vector<std::pair<Mesh::PointRef, float>> ret = {
+			{ mesh->getPoint(col, 0), center.y },
+			{ mesh->getPoint(col, mesh->getNumRows()), mesh->getNumRows()-center.y }
+		};
+		for(int row = center.y; --row >= 0;) {
+			if(isSelected(col, row)) {
+				ret[0] = {mesh->getPoint(col, row), center.y - row};
+				break;
+			}
+		}
+		for(int row = center.y; ++row <= mesh->getNumRows();) {
+			if(isSelected(col, row)) {
+				ret[1] = {mesh->getPoint(col, row), row - center.y};
+				break;
+			}
+		}
+		return ret;
+	};
+	auto interpolate = [](std::vector<std::pair<Mesh::PointRef, float>> pins, Mesh::PointRef dst,  bool use_weight) {
 		float sum = 0;
 		for(auto &&pin : pins) {
 			assert(pin.second > 0);
@@ -77,7 +99,7 @@ void Interpolator::update()
 		n = {0,0,0};
 		c = {0,0,0,0};
 		for(auto &&pin : pins) {
-			float weight = pin.second/sum;
+			float weight = use_weight ? pin.second/sum : 1/(float)pins.size();
 			v += (*pin.first.v)*weight;
 			t += (*pin.first.t)*weight;
 			n += (*pin.first.n)*weight;
@@ -88,30 +110,30 @@ void Interpolator::update()
 	};
 	int cols = mesh->getNumCols()+1;
 	int rows = mesh->getNumRows()+1;
-	auto candidates = getSelected();
-	decltype(candidates) cd_x0, cd_x1, cd_y0, cd_y1;
-	for(auto &&c : candidates) {
-		if(c.col == 0) { cd_x0.push_back(c); }
-		if(c.row == 0) { cd_y0.push_back(c); }
-		if(c.col == cols-1) { cd_x1.push_back(c); }
-		if(c.row == rows-1) { cd_y1.push_back(c); }
+	for(int c = 1; c < cols-1; ++c) {
+		if(!isSelected(c,0)) {
+			interpolate(gatherPinsX({c,0}), mesh->getPoint(c,0), true);
+		}
+		if(!isSelected(c,rows-1)) {
+			interpolate(gatherPinsX({c,rows-1}), mesh->getPoint(c,rows-1), true);
+		}
 	}
-	
-	for(int r = 0; r < rows; ++r) {
-		for(int c = 0; c < cols; ++c) {
+	for(int r = 1; r < rows-1; ++r) {
+		if(!isSelected(0,r)) {
+			interpolate(gatherPinsY({0,r}), mesh->getPoint(0,r), true);
+		}
+		if(!isSelected(cols-1,r)) {
+			interpolate(gatherPinsY({cols-1,r}), mesh->getPoint(cols-1,r), true);
+		}
+	}
+	for(int r = 1; r < rows-1; ++r) {
+		for(int c = 1; c < cols-1; ++c) {
 			if(selected_[r][c]) {
 				continue;
 			}
-			auto &&pins = r == 0 ? cd_y0
-						: r == rows-1 ? cd_y1
-						: c == 0 ? cd_x0
-						: c == cols-1 ? cd_x1
-						: candidates;
-			
-			auto &&num_desired = (r == 0 || r == rows-1 || c == 0 || c == cols-1) ? 2 : 4;
-			auto use_pins = gatherPins(glm::vec2(c,r), pins, num_desired);
-			assert(!use_pins.empty());
-			interpolate(use_pins, mesh->getPoint(c,r));
+			auto pins_x = gatherPinsX({c,r});
+			auto pins_y = gatherPinsY({c,r});
+			interpolate({pins_x[0], pins_x[1], pins_y[0], pins_y[1]}, mesh->getPoint(c,r), false);
 		}
 	}
 }

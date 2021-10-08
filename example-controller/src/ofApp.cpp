@@ -7,7 +7,7 @@ void ofApp::setup(){
 	ofLoadImage(texture_, "of.png");
 	mesh_ = std::make_shared<ofx::mapper::Mesh>();
 	mesh_->init({1,1});
-	mesh_->load("data.mapm");
+//	mesh_->load("data.mapm");
 	editor_.setup();
 	editor_.setRegion({200,300,500,500});
 	selector_.setMesh(mesh_);
@@ -22,7 +22,6 @@ void ofApp::onPointSelection(const EditorWindow::PointSelectionArg &arg)
 	if(arg.finished) {
 		if(is_pointer_on_mesh_point_) {
 			if(ofGetKeyPressed(OF_KEY_COMMAND)) {
-				cout << "do" << endl;
 				interpolator_.togglePoint(mesh_pointer_index_.x, mesh_pointer_index_.y);
 			}
 			else if(interpolator_.isSelected(mesh_pointer_index_.x, mesh_pointer_index_.y)) {
@@ -103,7 +102,7 @@ void ofApp::onRectSelection(const EditorWindow::RectSelectionArg &arg)
 
 //--------------------------------------------------------------
 void ofApp::update(){
-	interpolator_.update(mesh_interpolated_);
+	interpolator_.update();
 }
 
 //--------------------------------------------------------------
@@ -111,13 +110,13 @@ void ofApp::draw(){
 	editor_.pushScissor();
 	editor_.pushMatrix();
 	texture_.bind();
-	mesh_interpolated_->getMesh().draw();
+	mesh_->getMesh().draw();
 	texture_.unbind();
 	ofPushStyle();
 	ofSetColor(ofColor::blue);
-	mesh_interpolated_->getMesh().drawWireframe();
-	ofSetColor(ofColor::white);
 	mesh_->getMesh().drawWireframe();
+	ofSetColor(ofColor::white);
+//	mesh_->getMesh().drawWireframe();
 	ofPopStyle();
 	if(rect_selecting_) {
 		ofPushStyle();
