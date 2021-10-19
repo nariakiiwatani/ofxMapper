@@ -11,12 +11,23 @@ namespace mapper {
 class Selector
 {
 public:
+	Selector(){}
 	virtual ~Selector();
+
+	Selector(const Selector &src);
 	void setMesh(std::shared_ptr<Mesh> mesh);
+	std::shared_ptr<Mesh> getMesh() const { return mesh_.lock(); }
 	std::vector<Mesh::PointRef> getSelected();
 	std::vector<Mesh::ConstPointRef> getSelected() const;
+	std::vector<glm::ivec2> getSelectedIndices() const;
 	
 	std::vector<int> getPointsInside(const ofRectangle &rect) const;
+	
+	std::size_t numCols() const { return selected_.empty() ? 0 : selected_[0].size(); }
+	std::size_t numRows() const { return selected_.size(); }
+	std::size_t size() const { return numCols() * numRows(); }
+	
+	void resize(int col, int row);
 	
 	bool isSelected(int index) const;
 	bool isSelected(int col, int row) const;
@@ -48,4 +59,10 @@ protected:
 	virtual void onDeleteRow(int &index);
 	virtual void onDeleteCol(int &index);
 };
+extern Selector makeNot(const Selector &a);
+extern Selector makeAnd(const Selector &a, const Selector &b);
+extern Selector makeNand(const Selector &a, const Selector &b);
+extern Selector makeOr(const Selector &a, const Selector &b);
+extern Selector makeXor(const Selector &a, const Selector &b);
+
 }}

@@ -179,7 +179,7 @@ void Mesh::resetIndices()
 void Mesh::divideRow(int index, float offset)
 {
 	assert(index < num_cells_.y);
-	if(offset <= 0 || offset >= 1) {
+	if(offset < 0 || offset > 1) {
 		ofLogWarning(LOG_TITLE) << "cannot divide by offset outside 0 and 1";
 		return;
 	}
@@ -187,17 +187,37 @@ void Mesh::divideRow(int index, float offset)
 	resetIndices();
 	ofNotifyEvent(onDivideRow, index, this);
 }
+void Mesh::divideRow(int index, std::initializer_list<float> offsets)
+{
+	const float offset_min = 0, offset_max = 1;
+	float latest = 0;
+	std::set<float> sorted = offsets;
+	for(auto pos : sorted) {
+		divideRow(index++, ofMap(pos, latest, offset_max, offset_min, offset_max));
+		latest = pos;
+	}
+}
 
 void Mesh::divideCol(int index, float offset)
 {
 	assert(index < num_cells_.x);
-	if(offset <= 0 || offset >= 1) {
+	if(offset < 0 || offset > 1) {
 		ofLogWarning(LOG_TITLE) << "cannot divide by offset outside 0 and 1";
 		return;
 	}
 	divideColImpl(index, offset);
 	resetIndices();
 	ofNotifyEvent(onDivideCol, index, this);
+}
+void Mesh::divideCol(int index, std::initializer_list<float> offsets)
+{
+	const float offset_min = 0, offset_max = 1;
+	float latest = 0;
+	std::set<float> sorted = offsets;
+	for(auto pos : sorted) {
+		divideCol(index++, ofMap(pos, latest, offset_max, offset_min, offset_max));
+		latest = pos;
+	}
 }
 
 void Mesh::deleteRow(int index)
@@ -443,6 +463,25 @@ bool Mesh::getNearestPoint(const glm::vec2 &pos, glm::ivec2 &dst_index, glm::vec
 	}
 	return found;
 }
+std::vector<std::pair<glm::ivec2, glm::vec2>> Mesh::getPointsAround(const glm::vec2 &pos, float max_distance) const
+{
+	std::vector<std::pair<glm::ivec2, glm::vec2>> ret;
+	bool found = false;
+	float distance2 = max_distance > 0 ? max_distance*max_distance : std::numeric_limits<float>::max();
+	for(int row = 0; row <= num_cells_.y; ++row) {
+		for(int col = 0; col <= num_cells_.x; ++col) {
+			auto &&point = mesh_.getVertex(getIndex(col, row));
+			float dist2 = glm::distance2(glm::vec3(pos,0), point);
+			if(dist2 < distance2) {
+				ret.push_back({{col, row}, point});
+//				distance2 = dist2;
+				found = true;
+			}
+		}
+	}
+	return ret;
+}
+
 bool Mesh::getNearestPointOnLine(const glm::vec2 &pos, glm::vec2 &dst_findex, glm::vec2 &result, bool &is_row, float max_distance) const
 {
 	bool found = false;

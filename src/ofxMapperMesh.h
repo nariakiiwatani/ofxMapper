@@ -20,6 +20,8 @@ public:
 
 	void divideRow(int index, float offset);
 	void divideCol(int index, float offset);
+	void divideRow(int index, std::initializer_list<float> offsets);
+	void divideCol(int index, std::initializer_list<float> offsets);
 	void deleteRow(int index);
 	void deleteCol(int index);
 	ofEvent<int> onDivideRow, onDivideCol, onDeleteRow, onDeleteCol;
@@ -45,6 +47,7 @@ public:
 	bool isInside(const glm::vec2 &pos) const;
 	bool getIndexOfPoint(const glm::vec2 &pos, glm::vec2 &dst_findex) const;
 	bool getNearestPoint(const glm::vec2 &pos, glm::ivec2 &dst_index, glm::vec2 &result, float max_distance=0) const;
+	std::vector<std::pair<glm::ivec2, glm::vec2>> getPointsAround(const glm::vec2 &pos, float max_distance=0) const;
 	bool getNearestPointOnLine(const glm::vec2 &pos, glm::vec2 &dst_findex, glm::vec2 &result, bool &is_row, float max_distance=0) const;
 	
 private:

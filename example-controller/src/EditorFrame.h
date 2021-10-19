@@ -57,3 +57,4 @@ private:
 	};
 	mutable ScissorCache scissor_cache_;
 };
+

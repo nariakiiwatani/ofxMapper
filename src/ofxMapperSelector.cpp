@@ -2,12 +2,68 @@
 #include "ofxMapperMesh.h"
 #include <numeric>
 
+namespace ofx {
+namespace mapper {
+Selector makeNot(const Selector &a)
+{
+	Selector ret;
+	ret.resize(a.numCols(), a.numRows());
+	for(int i = 0; i < a.size(); ++i) {
+		a.isSelected(i) ? ret.clearPoint(i) : ret.selectPoint(i);
+	}
+	return ret;
+}
+Selector makeAnd(const Selector &a, const Selector &b)
+{
+	assert(a.size() == b.size());
+	Selector ret;
+	ret.resize(a.numCols(), a.numRows());
+	for(int i = 0; i < a.size(); ++i) {
+		a.isSelected(i) && b.isSelected(i) ? ret.selectPoint(i) : ret.clearPoint(i);
+	}
+	return ret;
+}
+Selector makeNand(const Selector &a, const Selector &b)
+{
+	return makeNot(makeAnd(a,b));
+}
+Selector makeOr(const Selector &a, const Selector &b)
+{
+	assert(a.size() == b.size());
+	Selector ret;
+	ret.resize(a.numCols(), a.numRows());
+	for(int i = 0; i < a.size(); ++i) {
+		a.isSelected(i) || b.isSelected(i) ? ret.selectPoint(i) : ret.clearPoint(i);
+	}
+	return ret;
+}
+Selector makeXor(const Selector &a, const Selector &b)
+{
+	assert(a.size() == b.size());
+	Selector ret;
+	ret.resize(a.numCols(), a.numRows());
+	for(int i = 0; i < a.size(); ++i) {
+		a.isSelected(i) != b.isSelected(i) ? ret.selectPoint(i) : ret.clearPoint(i);
+	}
+	return ret;
+}
+}}
+
 using namespace ofx::mapper;
+
+Selector::Selector(const Selector &src)
+{
+	resize(src.numCols(), src.numRows());
+	for(int i = 0; i < src.size(); ++i) {
+		src.isSelected(i) ? clearPoint(i) : selectPoint(i);
+	}
+}
 
 Selector::~Selector()
 {
 	setMesh(nullptr);
 }
+
 
 void Selector::setMesh(std::shared_ptr<Mesh> mesh)
 {
@@ -26,6 +82,14 @@ void Selector::setMesh(std::shared_ptr<Mesh> mesh)
 		ofAddListener(mesh->onDeleteCol, this, &Selector::onDeleteCol);
 		ofAddListener(mesh->onReset, this, &Selector::onResetMesh);
 		onResetMesh({mesh->getNumCols(), mesh->getNumRows()});
+	}
+}
+
+void Selector::resize(int col, int row)
+{
+	selected_.resize(row);
+	for(auto &row : selected_) {
+		row.resize(col);
 	}
 }
 
@@ -55,6 +119,20 @@ std::vector<Mesh::ConstPointRef> Selector::getSelected() const
 		for(int c = 0; c < row.size(); ++c) {
 			if(row[c]) {
 				ret.push_back(mesh->getPoint(c,r));
+			}
+		}
+	}
+	return ret;
+}
+
+std::vector<glm::ivec2> Selector::getSelectedIndices() const
+{
+	std::vector<glm::ivec2> ret;
+	for(int r = 0; r < selected_.size(); ++r) {
+		auto &row = selected_[r];
+		for(int c = 0; c < row.size(); ++c) {
+			if(row[c]) {
+				ret.push_back({c,r});
 			}
 		}
 	}
@@ -269,9 +347,6 @@ void Selector::onDeleteCol(int &index)
 
 void Selector::onResetMesh(const glm::ivec2 &num_cells)
 {
-	selected_.resize(num_cells.y+1);
-	for(auto &row : selected_) {
-		row.assign(num_cells.x+1, false);
-	}
+	resize(num_cells.x+1, num_cells.y+1);
 	clearAll();
 }
