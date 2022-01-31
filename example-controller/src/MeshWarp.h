@@ -15,6 +15,8 @@ public:
 	void setup(const glm::ivec2 &num_cells = glm::ivec2(1,1), const ofRectangle &vert_rect = ofRectangle(0,0,1,1), const ofRectangle &coord_rect = ofRectangle(0,0,1,1));
 	void update();
 	
+	std::shared_ptr<ofx::mapper::Mesh> getMesh() const { return mesh_; }
+	
 	void draw() const;
 	void drawWireframe() const;
 	void drawGuide() const;

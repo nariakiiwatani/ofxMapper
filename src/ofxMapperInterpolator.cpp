@@ -124,9 +124,21 @@ void Interpolator::update()
 		c = {0,0,0,0};
 		for(auto &&pin : pins) {
 			float weight = use_weight ? pin.second/sum : 1/(float)pins.size();
-			v += (*pin.first.v)*weight;
-			t += (*pin.first.t)*weight;
-			n += (*pin.first.n)*weight;
+
+			// fix for weird bug of glm only for debug build??
+			auto v_add = (*pin.first.v);
+			v_add *= weight;
+			v += v_add;
+			auto t_add = *pin.first.t;
+			t_add *= weight;
+			t += t_add;
+			auto n_add = (*pin.first.n);
+			n_add *= weight;
+			n += n_add;
+//			v += (*pin.first.v)*weight;
+//			t += (*pin.first.t)*weight;
+//			n += (*pin.first.n)*weight;
+			
 			auto &&color = *pin.first.c;
 			c += glm::vec4(color.r, color.g, color.b, color.a)*weight;
 		}

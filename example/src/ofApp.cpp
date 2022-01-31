@@ -12,6 +12,7 @@ void ofApp::setup(){
 
 //--------------------------------------------------------------
 void ofApp::update(){
+	interpolator_.selectAll();
 	interpolator_.update();
 }
 

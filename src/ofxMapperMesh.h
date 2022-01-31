@@ -6,14 +6,17 @@
 
 namespace ofx {
 namespace mapper {
+class Selector;
 class Mesh
 {
 public:
 	void init(const glm::ivec2 &num_cells = glm::ivec2(1,1), const ofRectangle &vert_rect = ofRectangle(0,0,1,1), const ofRectangle &coord_rect = ofRectangle(0,0,1,1)) { resetMesh(num_cells, vert_rect, coord_rect); }
 	const ofMesh& getMesh() const { return mesh_; }
 	
-	void save(const std::string &filepath) const;
-	void load(const std::string &filepath);
+	void save(const std::string &filepath, Selector *selector=nullptr) const;
+	void load(const std::string &filepath, Selector *selector=nullptr);
+	void pack(std::ostream &stream, Selector *selector=nullptr) const;
+	void unpack(std::istream &stream, Selector *selector=nullptr);
 	
 	int getNumRows() const { return num_cells_.y; }
 	int getNumCols() const { return num_cells_.x; }

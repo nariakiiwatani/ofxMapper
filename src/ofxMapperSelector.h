@@ -20,6 +20,7 @@ public:
 	std::vector<Mesh::PointRef> getSelected();
 	std::vector<Mesh::ConstPointRef> getSelected() const;
 	std::vector<glm::ivec2> getSelectedIndices() const;
+	std::size_t getNumSelected() const { return getSelectedIndices().size(); }
 	
 	std::vector<int> getPointsInside(const ofRectangle &rect) const;
 	
@@ -27,6 +28,7 @@ public:
 	std::size_t numRows() const { return selected_.size(); }
 	std::size_t size() const { return numCols() * numRows(); }
 	
+	void resize(int num) { resize(num, 1); }
 	void resize(int col, int row);
 	
 	bool isSelected(int index) const;

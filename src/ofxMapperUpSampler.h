@@ -7,6 +7,6 @@ namespace mapper {
 class UpSampler
 {
 public:
-	ofMesh proc(const Mesh &mesh, float max_vertex_distance) const;
+	ofMesh proc(const Mesh &mesh, float max_vertex_distance, const ofRectangle *use_area=nullptr) const;
 };
 }}

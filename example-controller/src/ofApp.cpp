@@ -1,5 +1,6 @@
 #include "ofApp.h"
 #include "ofxMapperSelector.h"
+#include "ofxMapperUpSampler.h"
 
 //--------------------------------------------------------------
 void ofApp::setup(){
@@ -28,11 +29,12 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+	ofx::mapper::UpSampler up_sampler;
 	editor_->pushScissor();
 	editor_->pushMatrix();
 	texture_.bind();
 	for(auto &&m : meshes_) {
-		m->draw();
+		up_sampler.proc(*m->getMesh(), 10).draw();
 	}
 	texture_.unbind();
 	ofPushStyle();

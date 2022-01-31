@@ -1,6 +1,7 @@
 #include "ofxMapperMesh.h"
 #include "ofLog.h"
 #include "ofPolyline.h"
+#include "ofxMapperSelector.h"
 
 namespace {
 static const std::string LOG_TITLE;
@@ -94,33 +95,49 @@ std::istream& operator>>(std::istream& stream, io::Point &point) {
 	return stream;
 }
 }
-void Mesh::save(const std::string &filepath) const
+void Mesh::save(const std::string &filepath, Selector *selector) const
 {
 	ofFile file(filepath, ofFile::WriteOnly);
-	file << io::Header(num_cells_.x, num_cells_.y, (num_cells_.x+1)*(num_cells_.y+1));
-	for(int r = 0; r <= num_cells_.y; ++r) {
-		for(int c = 0; c <= num_cells_.x; ++c) {
-			file << io::Point(const_cast<Mesh*>(this)->getPoint(c, r));
-		}
-	}
+	pack(file, selector);
 	file.close();
 }
-void Mesh::load(const std::string &filepath)
+void Mesh::pack(std::ostream &stream, Selector *selector) const
+{
+	stream << io::Header(num_cells_.x, num_cells_.y, selector ? selector->getNumSelected() : (num_cells_.x+1)*(num_cells_.y+1));
+	for(int r = 0; r <= num_cells_.y; ++r) {
+		for(int c = 0; c <= num_cells_.x; ++c) {
+			if(!selector || selector->isSelected(c,r)) {
+				stream << io::Point(const_cast<Mesh*>(this)->getPoint(c, r));
+			}
+		}
+	}
+}
+void Mesh::load(const std::string &filepath, Selector *selector)
 {
 	ofFile file(filepath);
+	unpack(file, selector);
+	file.close();
+}
+void Mesh::unpack(std::istream &stream, Selector *selector)
+{
+	if(selector) {
+		selector->clearAll();
+	}
 	io::Header header;
-	file >> header;
+	stream >> header;
 	resetMesh({header.col, header.row}, {0,0,1,1}, {0,0,1,1});
 	for(int i = 0; i < header.num; ++i) {
 		io::Point point;
-		file >> point;
+		stream >> point;
 		auto ref = getPoint(point.col, point.row);
 		*ref.v = point.v;
 		*ref.n = point.n;
 		*ref.t = point.t;
 		*ref.c = point.c;
+		if(selector) {
+			selector->selectPoint(point.col, point.row);
+		}
 	}
-	file.close();
 }
 
 void Mesh::resetMesh(const glm::ivec2 &num_cells, const ofRectangle &vert_rect, const ofRectangle &coord_rect)
@@ -258,15 +275,22 @@ void Mesh::divideRowImpl(int index, float offset)
 	colors.resize(num_vertices);
 	texcoords.resize(num_vertices);
 	normals.resize(num_vertices);
+	// replaces for glm::mix since there seem to be a bug only in debug build??
+	auto mix3 = [](const glm::vec3 &x, const glm::vec3 &y, float a) {
+		return glm::vec3{x.x*(1-a)+y.x*a,x.y*(1-a)+y.y*a,x.z*(1-a)+y.z*a};
+	};
+	auto mix2 = [](const glm::vec2 &x, const glm::vec2 &y, float a) {
+		return glm::vec2{x.x*(1-a)+y.x*a,x.y*(1-a)+y.y*a};
+	};
 	for(int x = cols; x--> 0;) {
 		for(int y = rows; y--> 0;) {
 			int dst = x*rows+y;
 			int src = x*(rows-1)+(y-(y>index?1:0));
 			if(y == index+1) {
-				vertices[dst] = glm::mix(vertices[src], vertices[src+1], offset);
+				vertices[dst] = mix3(vertices[src], vertices[src+1], offset);
 				colors[dst] = colors[src].getLerped(colors[src+1], offset);
-				texcoords[dst] = glm::mix(texcoords[src], texcoords[src+1], offset);
-				normals[dst] = glm::mix(normals[src], normals[src+1], offset);
+				texcoords[dst] = mix2(texcoords[src], texcoords[src+1], offset);
+				normals[dst] = mix3(normals[src], normals[src+1], offset);
 			}
 			else {
 				vertices[dst] = vertices[src];
@@ -291,15 +315,23 @@ void Mesh::divideColImpl(int index, float offset)
 	colors.resize(num_vertices);
 	texcoords.resize(num_vertices);
 	normals.resize(num_vertices);
+	// replaces for glm::mix since there seem to be a bug only in debug build??
+	auto mix3 = [](const glm::vec3 &x, const glm::vec3 &y, float a) {
+		return glm::vec3{x.x*(1-a)+y.x*a,x.y*(1-a)+y.y*a,x.z*(1-a)+y.z*a};
+	};
+	auto mix2 = [](const glm::vec2 &x, const glm::vec2 &y, float a) {
+		return glm::vec2{x.x*(1-a)+y.x*a,x.y*(1-a)+y.y*a};
+	};
 	for(int x = cols; x--> 0;) {
 		int src_x = (x-(x>index?1:0));
 		if(x == index+1) {
 			for(int y = rows; y--> 0;) {
 				int dst = x*rows+y;
 				int src = src_x*rows+y;
-				vertices[dst] = glm::mix(vertices[src], vertices[src+rows], offset);
+				vertices[dst] = mix3(vertices[src], vertices[src+rows], offset);
 				colors[dst] = colors[src].getLerped(colors[src+rows], offset);
-				texcoords[dst] = glm::mix(texcoords[src], texcoords[src+rows], offset);
+				texcoords[dst] = mix2(texcoords[src], texcoords[src+rows], offset);
+				normals[dst] = mix3(normals[src], normals[src+rows], offset);
 			}
 		}
 		else {
@@ -312,7 +344,8 @@ void Mesh::divideColImpl(int index, float offset)
 				normals[dst] = normals[src];
 			}
 		}
-	}}
+	}
+}
 void Mesh::deleteRowImpl(int index)
 {
 	auto &vertices = mesh_.getVertices();
