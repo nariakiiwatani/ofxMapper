@@ -140,6 +140,23 @@ void Mesh::unpack(std::istream &stream, Selector *selector)
 	}
 }
 
+void Mesh::init(const ofMesh &src, const glm::ivec2 &num_cells)
+{
+	init(num_cells);
+	int rows = num_cells.y+1;
+	int cols = num_cells.x+1;
+	for(int y = 0; y < rows; ++y) {
+		for(int x = 0; x < cols; ++x) {
+			ofIndexType index = y*cols+x;
+			auto ref = getPoint(x, y);
+			if(src.hasVertices()) { *ref.v = src.getVertex(index); }
+			if(src.hasTexCoords()) { *ref.t = src.getTexCoord(index); }
+			if(src.hasNormals()) { *ref.n = src.getNormal(index); }
+			if(src.hasColors()) { *ref.c = src.getColor(index); }
+		}
+	}
+}
+
 void Mesh::resetMesh(const glm::ivec2 &num_cells, const ofRectangle &vert_rect, const ofRectangle &coord_rect)
 {
 	num_cells_ = glm::ivec2(1,1);
