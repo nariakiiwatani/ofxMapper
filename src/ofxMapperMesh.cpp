@@ -455,6 +455,12 @@ bool Mesh::getIndexOfPoint(const glm::vec2 &pos, glm::vec2 &dst_findex) const
 			glm::vec2 AB = quad[1]-quad[0];
 			glm::vec2 AC = quad[2]-quad[0];
 			glm::vec2 AD = quad[3]-quad[0];
+			if(ofIsFloatEqual(AB.x, AC.x) && ofIsFloatEqual(AD.y, AC.y)) {
+				float s = ofMap(pos.x, quad[0].x, quad[1].x, 0, 1);
+				float t = ofMap(pos.y, quad[0].y, quad[2].y, 0, 1);
+				dst_findex = {s+col, t+row};
+				return ofInRange(s,0,1) && ofInRange(t,0,1);
+			}
 			glm::vec2 AP = pos-quad[0];
 			glm::vec2 CDB = AC-AD-AB;
 			auto calc_t = [=](float s) {
