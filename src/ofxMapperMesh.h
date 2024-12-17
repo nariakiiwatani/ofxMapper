@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ofMain.h"
+#include "ofRectangle.h"
 #include "ofMesh.h"
 #include <glm/vec2.hpp>
 #include "ofEventUtils.h"
